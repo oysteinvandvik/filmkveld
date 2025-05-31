@@ -3,7 +3,7 @@
   export let poll: Poll;
 
   let newImdbId = '';
-  const apiKey = import.meta.env.OMDB_API_KEY;
+  const apiKey = import.meta.env.PUBLIC_OMDB_API_KEY;
 
   async function fetchOMDB(id: string) {
     const res = await fetch(`https://www.omdbapi.com/?apikey=${apiKey}&i=${id}`);
