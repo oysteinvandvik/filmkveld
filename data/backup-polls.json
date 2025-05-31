@@ -1,0 +1,229 @@
+[
+  {
+    "id": "testpoll",
+    "title": "Filmkveld",
+    "date": "2025-05-31",
+    "maxVotes": 3,
+    "status": "open",
+    "movies": [
+      {
+        "id": "tt0486655",
+        "title": "Stardust",
+        "imdb": "tt0486655",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BMjkyMTE1OTYwNF5BMl5BanBnXkFtZTcwMDIxODYzMw@@._V1_SX300.jpg",
+          "plot": "In a countryside town bordering on a magical land, a young man makes a promise to his beloved that he'll retrieve a fallen star by venturing into the magical realm.",
+          "year": "2007",
+          "genre": "Adventure, Fantasy, Romance",
+          "runtime": "127 min"
+        }
+      },
+      {
+        "id": "tt0461770",
+        "title": "Enchanted",
+        "imdb": "tt0461770",
+        "votes": 2,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BMjE4NDQ2Mjc0OF5BMl5BanBnXkFtZTcwNzQ2NDE1MQ@@._V1_SX300.jpg",
+          "plot": "A young maiden in a land called Andalasia, who is prepared to be wed, is sent away to New York City by an evil Queen, where she falls in love with a lawyer.",
+          "year": "2007",
+          "genre": "Animation, Adventure, Comedy",
+          "runtime": "107 min"
+        }
+      },
+      {
+        "id": "tt0414387",
+        "title": "Pride & Prejudice",
+        "imdb": "tt0414387",
+        "votes": 1,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BMTA1NDQ3NTcyOTNeQTJeQWpwZ15BbWU3MDA0MzA4MzE@._V1_SX300.jpg",
+          "plot": "When Elizabeth Bennet meets the handsome Mr. Darcy, she believes he is the last man she could ever marry, but as their lives become intertwined, she finds herself captivated by the man she has sworn to hate forever.",
+          "year": "2005",
+          "genre": "Drama, Romance",
+          "runtime": "129 min"
+        }
+      },
+      {
+        "id": "tt3281548",
+        "title": "Little Women",
+        "imdb": "tt3281548",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BMWMzYjNiZWMtMDg4NS00MDgyLTk5MWItOTFmNjg4NzRhZmExXkEyXkFqcGc@._V1_SX300.jpg",
+          "plot": "In 19th century Massachusetts, the March sisters--Meg, Jo, Beth, and Amy--on the threshold of womanhood, go through many ups and downs in life and endeavor to make important decisions about their futures.",
+          "year": "2019",
+          "genre": "Drama, Romance",
+          "runtime": "135 min"
+        }
+      },
+      {
+        "id": "tt2119543",
+        "title": "The House with a Clock in Its Walls",
+        "imdb": "tt2119543",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BM2MwZjI4OGYtYjM1ZS00ODEzLTkzZDItMzNhYWFhMjQzMzgxXkEyXkFqcGc@._V1_SX300.jpg",
+          "plot": "A young orphan named Lewis Barnavelt aids his magical uncle in locating a clock with the power to bring about the end of the world.",
+          "year": "2018",
+          "genre": "Comedy, Family, Fantasy",
+          "runtime": "105 min"
+        }
+      }
+    ]
+  },
+  {
+    "id": "klassikere",
+    "title": "Klassikere",
+    "date": "2025-06-08",
+    "maxVotes": 10,
+    "movies": [
+      {
+        "id": "tt0034583",
+        "title": "Casablanca",
+        "imdb": "tt0034583",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BNWEzN2U1YTYtYTQyMS00NTVkLWE2NGQtZWFlMmM0MDNjMmRiXkEyXkFqcGc@._V1_SX300.jpg",
+          "plot": "A cynical expatriate American cafe owner struggles to decide whether or not to help his former lover and her fugitive husband escape the Nazis in French Morocco.",
+          "year": "1942",
+          "genre": "Drama, Romance, War",
+          "runtime": "102 min"
+        }
+      },
+      {
+        "id": "tt0031381",
+        "title": "Gone with the Wind",
+        "imdb": "tt0031381",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BYmYxZTE3YzMtYmE2Yy00NmFlLTkzYTAtYTAzN2IzNDFkN2E0XkEyXkFqcGc@._V1_SX300.jpg",
+          "plot": "A sheltered and manipulative Southern belle and a roguish profiteer face off in a turbulent romance as the society around them crumbles with the end of slavery and is rebuilt during the Civil War and Reconstruction periods.",
+          "year": "1939",
+          "genre": "Drama, Romance, War",
+          "runtime": "238 min"
+        }
+      },
+      {
+        "id": "tt0033467",
+        "title": "Citizen Kane",
+        "imdb": "tt0033467",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BYjk1ZDJlMmUtOWQ0Zi00MDM5LTk1OGYtODczNjFmMGYwZGVkXkEyXkFqcGc@._V1_SX300.jpg",
+          "plot": "Following the death of publishing tycoon Charles Foster Kane, reporters scramble to uncover the meaning of his final utterance: 'Rosebud.'",
+          "year": "1941",
+          "genre": "Drama, Mystery",
+          "runtime": "119 min"
+        }
+      },
+      {
+        "id": "tt0032138",
+        "title": "The Wizard of Oz",
+        "imdb": "tt0032138",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BYWRmY2I0MGItYTQ0OC00NWZmLWIwMDktYjJlNDc0MzVhMmViXkEyXkFqcGc@._V1_SX300.jpg",
+          "plot": "Young Dorothy Gale and her dog Toto are swept away by a tornado from their Kansas farm to the magical Land of Oz and embark on a quest with three new friends to see the Wizard, who can return her to her home and fulfill the others...",
+          "year": "1939",
+          "genre": "Adventure, Family, Fantasy",
+          "runtime": "102 min"
+        }
+      },
+      {
+        "id": "tt0050083",
+        "title": "12 Angry Men",
+        "imdb": "tt0050083",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BYjE4NzdmOTYtYjc5Yi00YzBiLWEzNDEtNTgxZGQ2MWVkN2NiXkEyXkFqcGc@._V1_SX300.jpg",
+          "plot": "The jury in a New York City murder trial is frustrated by a single member whose skeptical caution forces them to more carefully consider the evidence before jumping to a hasty verdict.",
+          "year": "1957",
+          "genre": "Crime, Drama",
+          "runtime": "96 min"
+        }
+      }
+    ],
+    "status": "open"
+  },
+  {
+    "id": "gutta",
+    "title": "Guttastemning",
+    "date": "2025-05-17",
+    "maxVotes": 3,
+    "movies": [
+      {
+        "id": "tt0133093",
+        "title": "The Matrix",
+        "imdb": "tt0133093",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BN2NmN2VhMTQtMDNiOS00NDlhLTliMjgtODE2ZTY0ODQyNDRhXkEyXkFqcGc@._V1_SX300.jpg",
+          "plot": "When a beautiful stranger leads computer hacker Neo to a forbidding underworld, he discovers the shocking truth--the life he knows is the elaborate deception of an evil cyber-intelligence.",
+          "year": "1999",
+          "genre": "Action, Sci-Fi",
+          "runtime": "136 min",
+          "actors": "Keanu Reeves, Laurence Fishburne, Carrie-Anne Moss"
+        }
+      },
+      {
+        "id": "tt0083658",
+        "title": "Blade Runner",
+        "imdb": "tt0083658",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BOWQ4YTBmNTQtMDYxMC00NGFjLTkwOGQtNzdhNmY1Nzc1MzUxXkEyXkFqcGc@._V1_SX300.jpg",
+          "plot": "A blade runner must pursue and terminate four replicants who stole a ship in space and have returned to Earth to find their creator.",
+          "year": "1982",
+          "genre": "Action, Drama, Sci-Fi",
+          "runtime": "117 min",
+          "actors": "Harrison Ford, Rutger Hauer, Sean Young"
+        }
+      },
+      {
+        "id": "tt0088763",
+        "title": "Back to the Future",
+        "imdb": "tt0088763",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BZmM3ZjE0NzctNjBiOC00MDZmLTgzMTUtNGVlOWFlOTNiZDJiXkEyXkFqcGc@._V1_SX300.jpg",
+          "plot": "Marty McFly, a 17-year-old high school student, is accidentally sent 30 years into the past in a time-traveling DeLorean invented by his close friend, the maverick scientist Doc Brown.",
+          "year": "1985",
+          "genre": "Adventure, Comedy, Sci-Fi",
+          "runtime": "116 min",
+          "actors": "Michael J. Fox, Christopher Lloyd, Lea Thompson"
+        }
+      },
+      {
+        "id": "tt0084827",
+        "title": "Tron",
+        "imdb": "tt0084827",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BMTA4Y2VjOWEtMWQ5MS00YWU5LTkxZTMtNzVmMDYyNWFiODU5XkEyXkFqcGc@._V1_SX300.jpg",
+          "plot": "A computer hacker is abducted into a digital world and forced to participate in gladiatorial games where his only chance of escape is with the help of a heroic security program.",
+          "year": "1982",
+          "genre": "Action, Adventure, Sci-Fi",
+          "runtime": "96 min",
+          "actors": "Jeff Bridges, Bruce Boxleitner, David Warner"
+        }
+      },
+      {
+        "id": "tt0086567",
+        "title": "WarGames",
+        "imdb": "tt0086567",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BMmM5MDlmZWUtYTE1Mi00M2JiLTk1NzYtMTg0NTdlMzM2N2RkXkEyXkFqcGc@._V1_SX300.jpg",
+          "plot": "A young man finds a back door into a military central computer in which reality is confused with game-playing, possibly starting World War III.",
+          "year": "1983",
+          "genre": "Action, Drama, Sci-Fi",
+          "runtime": "114 min",
+          "actors": "Matthew Broderick, Ally Sheedy, John Wood"
+        }
+      }
+    ],
+    "status": "open"
+  }
+]

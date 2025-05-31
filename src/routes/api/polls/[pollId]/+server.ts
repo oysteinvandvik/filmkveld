@@ -67,3 +67,10 @@ export async function PATCH({ params }) {
   await writeFile(POLLS_FILE, JSON.stringify(polls, null, 2));
   return json({ success: true });
 }
+
+export async function DELETE({ params }) {
+  const polls = JSON.parse(await readFile(POLLS_FILE, 'utf-8'));
+  const updated = polls.filter((p) => p.id !== params.pollId);
+  await writeFile(POLLS_FILE, JSON.stringify(updated, null, 2));
+  return json({ success: true });
+}
