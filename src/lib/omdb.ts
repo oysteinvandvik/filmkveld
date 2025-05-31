@@ -1,4 +1,4 @@
-import { PUBLIC_OMDB_API_KEY } from '$env/static/private';
+import { PUBLIC_OMDB_API_KEY } from '$env/static/public';
 
 export async function fetchOMDBData(imdbID: string) {
   const res = await fetch(`https://www.omdbapi.com/?apikey=${PUBLIC_OMDB_API_KEY}&i=${imdbID}`);
