@@ -1,0 +1,612 @@
+-e \n\n===== src/demo.spec.ts =====\n
+import { describe, it, expect } from 'vitest';
+
+describe('sum test', () => {
+	it('adds 1 + 2 to equal 3', () => {
+		expect(1 + 2).toBe(3);
+	});
+});
+-e \n\n===== src/app.d.ts =====\n
+// See https://svelte.dev/docs/kit/types#app.d.ts
+// for information about these interfaces
+declare global {
+	namespace App {
+		// interface Error {}
+		// interface Locals {}
+		// interface PageData {}
+		// interface PageState {}
+		// interface Platform {}
+	}
+}
+
+export {};
+-e \n\n===== src/app.css =====\n
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+-e \n\n===== src/lib/omdb.ts =====\n
+import { OMDB_API_KEY } from '$env/static/private';
+
+export async function fetchOMDBData(imdbID: string) {
+  const res = await fetch(`https://www.omdbapi.com/?apikey=${OMDB_API_KEY}&i=${imdbID}`);
+  if (!res.ok) throw new Error('Failed to fetch OMDB');
+  return await res.json();
+}-e \n\n===== src/lib/index.ts =====\n
+// place files you want to import through the `$lib` alias in this folder.
+-e \n\n===== src/routes/vote/[pollId]/+page.svelte =====\n
+<script>
+  import { onMount } from 'svelte';
+  import { page } from '$app/stores';
+  import { writable, derived, get } from 'svelte/store';
+
+  let poll = null;
+  const usedVotes = writable([]);
+  const remaining = derived(usedVotes, ($usedVotes) =>
+    poll ? poll.maxVotes - $usedVotes.length : 0
+  );
+
+  onMount(async () => {
+    const pollId = get(page).params.pollId;
+    const res = await fetch(`/api/polls/${pollId}`);
+    poll = await res.json();
+
+    const saved = localStorage.getItem(`votes-${poll.id}`);
+    if (saved) {
+      usedVotes.set(JSON.parse(saved));
+    }
+  });
+
+  function incrementVote(movieId) {
+    usedVotes.update((current) => {
+      if (poll && current.length < poll.maxVotes) return [...current, movieId];
+      return current;
+    });
+  }
+
+  function decrementVote(movieId) {
+    usedVotes.update((current) => {
+      const index = current.lastIndexOf(movieId);
+      if (index !== -1) {
+        const copy = [...current];
+        copy.splice(index, 1);
+        return copy;
+      }
+      return current;
+    });
+  }
+
+  async function submitVotes() {
+    const $votes = get(usedVotes);
+    await fetch(`/api/polls/${poll.id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ votes: $votes })
+    });
+    alert('Takk for stemmen!');
+  }
+
+  $: if (poll) {
+    usedVotes.subscribe((v) => {
+      localStorage.setItem(`votes-${poll.id}`, JSON.stringify(v));
+    });
+  }
+</script>
+
+{#if poll}
+  <div class="p-6 max-w-2xl mx-auto space-y-6">
+    <h1 class="text-2xl font-bold text-center">{poll.title}</h1>
+    <p class="text-center text-gray-600">{poll.date}</p>
+
+    {#if poll.status === 'open'}
+      <div class="space-y-4">
+        {#each poll.movies as movie}
+          <div class="bg-white rounded shadow p-4 space-y-3">
+            <div class="flex justify-between items-center">
+              <h2 class="font-semibold text-lg">{movie.title}</h2>
+              <div class="flex space-x-2 items-center">
+                <button on:click={() => decrementVote(movie.id)} class="bg-gray-200 px-2 rounded">−</button>
+                <span class="font-mono">{$usedVotes.filter(v => v === movie.id).length}</span>
+                <button on:click={() => incrementVote(movie.id)} class="bg-gray-200 px-2 rounded">+</button>
+              </div>
+            </div>
+
+            {#if movie.omdb}
+              <div class="flex space-x-4">
+                {#if movie.omdb.poster && movie.omdb.poster !== 'N/A'}
+                  <img src={movie.omdb.poster} alt="Poster" class="w-24 h-auto rounded shadow" />
+                {:else}
+                  <div class="w-24 h-36 bg-gray-100 border flex items-center justify-center rounded shadow text-gray-400 text-xs text-center px-2">
+                    🎮<br />Ingen plakat
+                  </div>
+                {/if}
+                <div class="text-sm text-gray-700 space-y-1">
+                  <p>{movie.omdb.plot}</p>
+                  <p class="text-xs text-gray-500 italic">{movie.omdb.year} · {movie.omdb.genre} · {movie.omdb.runtime}</p>
+                </div>
+              </div>
+            {/if}
+          </div>
+        {/each}
+      </div>
+
+      <div class="text-center text-gray-700 pt-4">
+        Du har {$remaining} {$remaining === 1 ? 'stemme' : 'stemmer'} igjen
+      </div>
+
+      <div class="flex justify-center pt-4">
+        <button
+          class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded shadow disabled:opacity-50"
+          on:click={submitVotes}
+          disabled={$remaining !== 0}
+        >
+          Send inn stemmer
+        </button>
+      </div>
+    {:else}
+      <h2 class="text-lg font-semibold text-center text-gray-700 mb-4">Resultat</h2>
+      <ul class="space-y-4">
+        {#each poll.movies.slice().sort((a, b) => b.votes - a.votes) as movie, i}
+          <li class="bg-white p-4 rounded shadow space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="font-medium">{i + 1}. {movie.title}</span>
+              <span class="text-purple-700 font-semibold">{movie.votes} stemmer</span>
+            </div>
+            {#if movie.omdb}
+              <div class="flex space-x-4 pt-2">
+                {#if movie.omdb.poster && movie.omdb.poster !== 'N/A'}
+                  <img src={movie.omdb.poster} alt="Poster" class="w-20 rounded shadow" />
+                {:else}
+                  <div class="w-20 h-28 bg-gray-100 border flex items-center justify-center rounded shadow text-gray-400 text-xs text-center px-2">
+                    🎮<br />Ingen plakat
+                  </div>
+                {/if}
+                <div class="text-sm text-gray-700">
+                  <div class="mb-1">{movie.omdb.plot}</div>
+                  <div class="text-xs italic text-gray-500">
+                    {movie.omdb.year} · {movie.omdb.genre} · {movie.omdb.runtime}
+                  </div>
+                </div>
+              </div>
+            {/if}
+          </li>
+        {/each}
+      </ul>
+    {/if}
+  </div>
+{:else}
+  <p class="text-red-600 text-center mt-10">
+    ❗ Klarte ikke hente avstemning. Er du sikker på at pollId <strong>{get(page).params.pollId}</strong> finnes i <code>polls.json</code>?
+  </p>
+{/if}
+-e \n\n===== src/routes/vote/[pollId]/+page.ts =====\n
+export const ssr = false;
+-e \n\n===== src/routes/+page.svelte =====\n
+<!-- src/routes/+page.svelte -->
+<script>
+    // valgfritt: logg aktiv rute
+    import { page } from '$app/stores';
+    $: console.log('Rute:', $page.url.pathname);
+  </script>
+  
+  <div class="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-center p-8">
+    <h1 class="text-3xl md:text-5xl font-bold text-gray-800 mb-6">
+      Velkommen til <span class="text-purple-600">Filmkveld 🎬</span>
+    </h1>
+    <p class="text-lg text-gray-600 mb-8 max-w-md">
+      Stem frem kveldens filmvalg med dot-voting! Opprett en runde eller bli med i en eksisterende.
+    </p>
+    <div class="flex flex-col gap-4 sm:flex-row">
+      <a href="/admin" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg shadow transition">
+        Opprett en ny avstemning
+      </a>
+      <a href="/vote/test2025" class="bg-white border border-purple-600 text-purple-600 hover:bg-purple-50 px-6 py-3 rounded-lg transition">
+        Gå til stemmeside
+      </a>
+    </div>
+  </div>
+  -e \n\n===== src/routes/page.svelte.test.ts =====\n
+import { describe, test, expect } from 'vitest';
+import '@testing-library/jest-dom/vitest';
+import { render, screen } from '@testing-library/svelte';
+import Page from './+page.svelte';
+
+describe('/+page.svelte', () => {
+	test('should render h1', () => {
+		render(Page);
+		expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
+	});
+});
+-e \n\n===== src/routes/admin/+page.svelte =====\n
+<!-- src/routes/admin/+page.svelte -->
+<script>
+  let title = '', id = '', date = '', maxVotes = 3;
+  let movies = [];
+  function addMovie(input) {
+    const imdbMatch = input.match(/tt\d{7,}/);
+    const movie = {
+      id: crypto.randomUUID(),
+      title: input,
+      imdb: imdbMatch ? imdbMatch[0] : null,
+      votes: 0
+    };
+    movies = [...movies, movie];
+  }
+  async function addPoll() {
+    await fetch('/api/polls', {
+      method: 'POST',
+      body: JSON.stringify({ id, title, date, maxVotes, movies, status: 'open' })
+    });
+    alert('Avstemning opprettet');
+  }
+  async function closePoll(pollId) {
+    await fetch(`/api/polls/${pollId}`, {
+      method: 'PATCH'
+    });
+    alert(`Avstemning '${pollId}' er nå avsluttet.`);
+  }
+</script>
+
+<div class="max-w-xl mx-auto p-6 space-y-6">
+  <h1 class="text-2xl font-bold text-center">Adminpanel</h1>
+
+  <div class="space-y-4">
+    <h2 class="text-lg font-semibold">Opprett ny runde</h2>
+    <input bind:value={id} placeholder="Kode (f.eks. fredag2025)" class="w-full border p-2 rounded" />
+    <input bind:value={title} placeholder="Tittel" class="w-full border p-2 rounded" />
+    <input bind:value={date} placeholder="Dato" type="date" class="w-full border p-2 rounded" />
+    <input bind:value={maxVotes} type="number" min="1" class="w-full border p-2 rounded" />
+    <input
+      on:keydown={(e) => e.key === 'Enter' && addMovie(e.target.value)}
+      placeholder="Filmnavn eller IMDb-lenke og Enter"
+      class="w-full border p-2 rounded"
+    />
+    <ul class="list-disc list-inside text-sm text-gray-600">
+      {#each movies as m}
+        <li>{m.title}</li>
+      {/each}
+    </ul>
+    <button on:click={addPoll} class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow">
+      Opprett runde
+    </button>
+  </div>
+
+  <hr />
+
+  <div class="space-y-4">
+    <h2 class="text-lg font-semibold">Avslutt eksisterende poll</h2>
+    <input placeholder="Poll ID" bind:value={id} class="w-full border p-2 rounded" />
+    <button on:click={() => closePoll(id)} class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded shadow">
+      Avslutt runde
+    </button>
+  </div>
+</div>-e \n\n===== src/routes/api/polls/[pollId]/+server.ts =====\n
+import { json } from '@sveltejs/kit';
+import { readFile, writeFile } from 'fs/promises';
+import { fetchOMDBData } from '$lib/omdb';
+
+const POLLS_FILE = 'data/polls.json';
+
+export async function GET({ params }) {
+  const polls = JSON.parse(await readFile(POLLS_FILE, 'utf-8'));
+  const poll = polls.find((p) => p.id === params.pollId);
+
+  if (!poll) {
+    return json({ error: 'Not found' }, { status: 404 });
+  }
+
+  let updated = false;
+
+  // Hent og lagre OMDB-data dersom det mangler
+  for (const movie of poll.movies) {
+    if (movie.imdb && !movie.omdb) {
+      try {
+        const meta = await fetchOMDBData(movie.imdb);
+        movie.omdb = {
+          poster: meta.Poster,
+          plot: meta.Plot,
+          year: meta.Year,
+          genre: meta.Genre,
+          runtime: meta.Runtime
+        };
+        updated = true;
+      } catch (e) {
+        console.warn(`Klarte ikke hente OMDB-data for ${movie.imdb}:`, e);
+      }
+    }
+  }
+
+  // Lagre tilbake til fil hvis vi beriket noe
+  if (updated) {
+    await writeFile(POLLS_FILE, JSON.stringify(polls, null, 2));
+  }
+
+  return json(poll);
+}
+
+export async function POST({ params, request }) {
+  const { votes } = await request.json();
+  const polls = JSON.parse(await readFile(POLLS_FILE, 'utf-8'));
+  const poll = polls.find((p) => p.id === params.pollId);
+
+  if (!poll) return json({ error: 'Not found' }, { status: 404 });
+
+  for (const vote of votes) {
+    const movie = poll.movies.find((m) => m.id === vote);
+    if (movie) movie.votes += 1;
+  }
+
+  await writeFile(POLLS_FILE, JSON.stringify(polls, null, 2));
+  return json({ success: true });
+}
+
+export async function PATCH({ params }) {
+  const polls = JSON.parse(await readFile(POLLS_FILE, 'utf-8'));
+  const poll = polls.find((p) => p.id === params.pollId);
+
+  if (!poll) return json({ error: 'Not found' }, { status: 404 });
+
+  poll.status = 'closed';
+  await writeFile(POLLS_FILE, JSON.stringify(polls, null, 2));
+  return json({ success: true });
+}
+-e \n\n===== src/routes/api/polls/+server.ts =====\n
+// src/routes/api/polls/+server.ts
+import { json } from '@sveltejs/kit';
+import { readFile, writeFile } from 'fs/promises';
+const POLLS_FILE = 'data/polls.json';
+
+export async function GET() {
+  const data = await readFile(POLLS_FILE, 'utf-8');
+  return json(JSON.parse(data));
+}
+
+export async function POST({ request }) {
+  const poll = await request.json();
+  const data = JSON.parse(await readFile(POLLS_FILE, 'utf-8'));
+  data.push(poll);
+  await writeFile(POLLS_FILE, JSON.stringify(data, null, 2));
+  return json({ success: true });
+}-e \n\n===== src/routes/dev/generator/+page.svelte =====\n
+<script>
+    let imdbIds = 'tt0133093,tt1375666,tt0816692';
+    let apiKey = 'bca81e9b';
+    let output = '';
+    let isLoading = false;
+  
+    async function fetchOMDB(id) {
+      const res = await fetch(`https://www.omdbapi.com/?apikey=${apiKey}&i=${id}`);
+      return res.json();
+    }
+  
+    async function generate() {
+      isLoading = true;
+      output = '';
+      const ids = imdbIds.split(',').map(id => id.trim()).filter(Boolean);
+      const movies = [];
+  
+      for (const id of ids) {
+        const data = await fetchOMDB(id);
+        if (data.Response === 'True') {
+          movies.push({
+            id,
+            title: data.Title,
+            imdb: id,
+            votes: 0,
+            omdb: {
+              poster: data.Poster,
+              plot: data.Plot,
+              year: data.Year,
+              genre: data.Genre,
+              runtime: data.Runtime
+            }
+          });
+        }
+      }
+  
+      const poll = {
+        id: 'testpoll',
+        title: 'Filmkveld',
+        date: new Date().toISOString().split('T')[0],
+        maxVotes: 3,
+        status: 'open',
+        movies
+      };
+  
+      output = JSON.stringify([poll], null, 2);
+      isLoading = false;
+    }
+  
+    function download() {
+      const blob = new Blob([output], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'polls.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+  
+  <div class="p-6 max-w-2xl mx-auto space-y-6">
+    <h1 class="text-xl font-bold">Generer polls.json</h1>
+  
+    <label class="block">
+      IMDb-IDer (kommaseparert):
+      <textarea bind:value={imdbIds} class="w-full p-2 border rounded mt-1" rows="3"></textarea>
+    </label>
+  
+    <label class="block">
+      OMDB API-nøkkel:
+      <input type="text" bind:value={apiKey} class="w-full p-2 border rounded mt-1" />
+    </label>
+  
+    <button
+      on:click={generate}
+      class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+      disabled={isLoading}
+    >
+      {isLoading ? 'Henter data...' : 'Generer'}
+    </button>
+  
+    {#if output}
+      <div class="space-y-2">
+        <pre class="bg-gray-100 p-4 rounded overflow-auto text-sm max-h-96">{output}</pre>
+        <button
+          on:click={download}
+          class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        >
+          Last ned polls.json
+        </button>
+      </div>
+    {/if}
+  </div>
+  -e \n\n===== src/routes/+layout.svelte =====\n
+<script lang="ts">
+	import '../app.css';
+
+	let { children } = $props();
+</script>
+
+{@render children()}
+-e \n\n===== data/polls.json =====\n
+[
+  {
+    "id": "testpoll",
+    "title": "Filmkveld",
+    "date": "2025-05-31",
+    "maxVotes": 3,
+    "status": "open",
+    "movies": [
+      {
+        "id": "tt0110357",
+        "title": "The Lion King",
+        "imdb": "tt0110357",
+        "votes": 3,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BZGRiZDZhZjItM2M3ZC00Y2IyLTk3Y2MtMWY5YjliNDFkZTJlXkEyXkFqcGc@._V1_SX300.jpg",
+          "plot": "Lion prince Simba and his father are targeted by his bitter uncle, who wants to ascend the throne himself.",
+          "year": "1994",
+          "genre": "Animation, Adventure, Drama",
+          "runtime": "88 min"
+        }
+      },
+      {
+        "id": "tt0103639",
+        "title": "Aladdin",
+        "imdb": "tt0103639",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BMmQwYWZjZGItYzc0OC00ZDllLTg3NjItOWIyOWYwMDljMjAyXkEyXkFqcGc@._V1_SX300.jpg",
+          "plot": "A kind-hearted street urchin and a power-hungry Grand Vizier vie for a magic lamp that has the power to make their deepest wishes come true.",
+          "year": "1992",
+          "genre": "Animation, Adventure, Comedy",
+          "runtime": "90 min"
+        }
+      },
+      {
+        "id": "tt0101414",
+        "title": "Beauty and the Beast",
+        "imdb": "tt0101414",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BYTY3NDg2YzktYWFjZC00MTExLTlmZDctMGY3MWYzZTlkYTNiXkEyXkFqcGc@._V1_SX300.jpg",
+          "plot": "A prince cursed to spend his days as a hideous monster sets out to regain his humanity by earning a young woman's love.",
+          "year": "1991",
+          "genre": "Animation, Family, Fantasy",
+          "runtime": "84 min"
+        }
+      },
+      {
+        "id": "tt0097757",
+        "title": "The Little Mermaid",
+        "imdb": "tt0097757",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BNmQ3ODcyZGMtMjNlOS00YzhlLTg0YzAtZGVjNmQ0OTYyNDg0XkEyXkFqcGc@._V1_SX300.jpg",
+          "plot": "A mermaid princess makes a Faustian bargain in an attempt to become human and win a prince's love.",
+          "year": "1989",
+          "genre": "Animation, Adventure, Family",
+          "runtime": "83 min"
+        }
+      },
+      {
+        "id": "tt2294629",
+        "title": "Frozen",
+        "imdb": "tt2294629",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BMTQ1MjQwMTE5OF5BMl5BanBnXkFtZTgwNjk3MTcyMDE@._V1_SX300.jpg",
+          "plot": "Fearless optimist Anna teams up with rugged mountain man Kristoff and his loyal reindeer Sven in an epic journey to find Anna's sister Elsa, whose icy powers have trapped the kingdom of Arendelle in eternal winter.",
+          "year": "2013",
+          "genre": "Animation, Adventure, Comedy",
+          "runtime": "102 min"
+        }
+      },
+      {
+        "id": "tt0114709",
+        "title": "Toy Story",
+        "imdb": "tt0114709",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BZTA3OWVjOWItNjE1NS00NzZiLWE1MjgtZDZhMWI1ZTlkNzYwXkEyXkFqcGc@._V1_SX300.jpg",
+          "plot": "A cowboy doll is profoundly threatened and jealous when a new spaceman action figure supplants him as top toy in a boy's bedroom.",
+          "year": "1995",
+          "genre": "Animation, Adventure, Comedy",
+          "runtime": "81 min"
+        }
+      },
+      {
+        "id": "tt2948356",
+        "title": "Zootopia",
+        "imdb": "tt2948356",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BOTMyMjEyNzIzMV5BMl5BanBnXkFtZTgwNzIyNjU0NzE@._V1_SX300.jpg",
+          "plot": "In a city of anthropomorphic animals, a rookie bunny cop and a cynical con artist fox must work together to uncover a conspiracy.",
+          "year": "2016",
+          "genre": "Animation, Action, Adventure",
+          "runtime": "108 min"
+        }
+      },
+      {
+        "id": "tt3521164",
+        "title": "Moana",
+        "imdb": "tt3521164",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BMjI4MzU5NTExNF5BMl5BanBnXkFtZTgwNzY1MTEwMDI@._V1_SX300.jpg",
+          "plot": "In ancient Polynesia, when a terrible curse incurred by the demigod Maui reaches Moana's island, she answers the Ocean's call to seek out Maui to set things right.",
+          "year": "2016",
+          "genre": "Animation, Adventure, Comedy",
+          "runtime": "107 min"
+        }
+      },
+      {
+        "id": "tt0275847",
+        "title": "Lilo & Stitch",
+        "imdb": "tt0275847",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BYzRiYTA1YTEtMjYwMi00NGVhLThkOGYtZDBlYjNjZDk2NDEwXkEyXkFqcGc@._V1_SX300.jpg",
+          "plot": "A young and parentless girl adopts a 'dog' from the local pound, completely unaware that it's supposedly a dangerous scientific experiment that's taken refuge on Earth and is now hiding from its creator and those who see it as a m...",
+          "year": "2002",
+          "genre": "Animation, Adventure, Comedy",
+          "runtime": "85 min"
+        }
+      },
+      {
+        "id": "tt0266543",
+        "title": "Finding Nemo",
+        "imdb": "tt0266543",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BMTc5NjExNTA5OV5BMl5BanBnXkFtZTYwMTQ0ODY2._V1_SX300.jpg",
+          "plot": "After his son is captured in the Great Barrier Reef and taken to Sydney, a timid clownfish sets out on a journey to bring him home.",
+          "year": "2003",
+          "genre": "Animation, Adventure, Comedy",
+          "runtime": "100 min"
+        }
+      }
+    ]
+  }
+]
