@@ -35,9 +35,19 @@
     pollForm = { ...poll };
   }
 
-  function viewPoll(poll) {
-    selectedPoll = poll;
+  function resetPollForm() {
     editing = false;
+    selectedPoll = null;
+    pollForm = {
+      id: '',
+      title: '',
+      date: '',
+      maxVotes: 3,
+      movies: [],
+      status: 'open'
+    };
+    newImdb = '';
+    errorMessage = '';
   }
 
   async function deletePoll(pollId: string) {
@@ -66,10 +76,7 @@
       });
       if (!res.ok) throw new Error('Opprettelse/oppdatering feilet');
       await fetchPolls();
-      editing = false;
-      pollForm = { id: '', title: '', date: '', maxVotes: 3, movies: [], status: 'open' };
-      newImdb = '';
-      errorMessage = '';
+      resetPollForm();
     } catch (e) {
       console.error('Feil ved opprettelse/oppdatering av poll:', e);
       errorMessage = 'Klarte ikke lagre avstemning.';
@@ -131,10 +138,33 @@
     <h2 class="text-xl font-semibold">{editing ? 'Oppdater avstemning' : 'Opprett ny avstemning'}</h2>
 
     <div class="space-y-3">
-      <input bind:value={pollForm.id} placeholder="Kode (f.eks. fredag2025)" class="w-full border p-2 rounded-xl" />
-      <input bind:value={pollForm.title} placeholder="Tittel" class="w-full border p-2 rounded-xl" />
-      <input bind:value={pollForm.date} type="date" class="w-full border p-2 rounded-xl" />
-      <input bind:value={pollForm.maxVotes} type="number" min="1" class="w-full border p-2 rounded-xl" />
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <input
+          bind:value={pollForm.id}
+          placeholder="Kode (f.eks. fredag2025)"
+          class="w-full border p-2 rounded-xl"
+          readonly={editing}
+        />
+        <input
+          bind:value={pollForm.title}
+          placeholder="Tittel"
+          class="w-full border p-2 rounded-xl"
+        />
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <input
+          bind:value={pollForm.date}
+          type="date"
+          class="w-full border p-2 rounded-xl"
+        />
+        <input
+          bind:value={pollForm.maxVotes}
+          type="number"
+          min="1"
+          class="w-full border p-2 rounded-xl"
+        />
+      </div>
 
       <div class="flex space-x-2">
         <input bind:value={newImdb} placeholder="IMDb-ID (f.eks. tt0133093)" class="flex-1 border p-2 rounded-xl" />
@@ -164,9 +194,20 @@
         </div>
       {/if}
 
-      <button on:click={savePoll} class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl">
-        {editing ? 'Oppdater avstemning' : 'Opprett avstemning'}
-      </button>
+      <div class="flex gap-2">
+        <button on:click={savePoll} class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl">
+          {editing ? 'Oppdater avstemning' : 'Opprett avstemning'}
+        </button>
+
+        {#if editing}
+          <button
+            on:click={resetPollForm}
+            class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-xl border"
+          >
+            Avbryt
+          </button>
+        {/if}
+      </div>
     </div>
   </section>
 
@@ -182,7 +223,7 @@
             </div>
             <div class="flex space-x-2">
               <button on:click={() => editPoll(poll)} class="text-blue-600 hover:underline text-sm">Endre</button>
-              <button on:click={() => viewPoll(poll)} class="text-gray-600 hover:underline text-sm">Vis</button>
+              <button on:click={() => selectedPoll = poll} class="text-gray-600 hover:underline text-sm">Vis</button>
               <button on:click={() => deletePoll(poll.id)} class="text-red-600 hover:underline text-sm">Slett</button>
             </div>
           </div>

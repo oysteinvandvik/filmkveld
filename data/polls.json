@@ -225,5 +225,84 @@
       }
     ],
     "status": "open"
+  },
+  {
+    "id": "ohana",
+    "title": "Familiekveld",
+    "date": "2025-05-10",
+    "maxVotes": 3,
+    "movies": [
+      {
+        "id": "tt0066817",
+        "title": "Bedknobs and Broomsticks",
+        "imdb": "tt0066817",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BMTUxMTY3MTE5OF5BMl5BanBnXkFtZTgwNTQ0ODgxMzE@._V1_SX300.jpg",
+          "plot": "An apprentice witch, three kids, and a cynical magician conman search for the missing component to a magic spell to be used in the defense of Britain in World War II.",
+          "year": "1971",
+          "genre": "Animation, Adventure, Comedy",
+          "runtime": "117 min",
+          "actors": "Angela Lansbury, David Tomlinson, Roddy McDowall"
+        }
+      },
+      {
+        "id": "tt0083866",
+        "title": "E.T. the Extra-Terrestrial",
+        "imdb": "tt0083866",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BYTNhNmY0YWMtMTczYi00MTA0LThhMmUtMTIxYzE0Y2QwMzRlXkEyXkFqcGc@._V1_SX300.jpg",
+          "plot": "A troubled child summons the courage to help a friendly alien escape from Earth and return to his home planet.",
+          "year": "1982",
+          "genre": "Adventure, Family, Sci-Fi",
+          "runtime": "115 min",
+          "actors": "Henry Thomas, Drew Barrymore, Peter Coyote"
+        }
+      },
+      {
+        "id": "tt0067992",
+        "title": "Willy Wonka & the Chocolate Factory",
+        "imdb": "tt0067992",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BNzllNzlkNzYtZTEzZi00ODMwLWFlYTctZDE5Mzk0NTM1NmViXkEyXkFqcGc@._V1_SX300.jpg",
+          "plot": "A poor but hopeful boy seeks one of the five coveted golden tickets that will send him on a tour of Willy Wonka's mysterious chocolate factory.",
+          "year": "1971",
+          "genre": "Adventure, Comedy, Family",
+          "runtime": "100 min",
+          "actors": "Gene Wilder, Jack Albertson, Peter Ostrum"
+        }
+      },
+      {
+        "id": "tt0093779",
+        "title": "The Princess Bride",
+        "imdb": "tt0093779",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BMjFiOTEyNGMtN2E4MC00ZjZlLTk3ZDQtNTU1ZGNiZTA1MzJlXkEyXkFqcGc@._V1_SX300.jpg",
+          "plot": "A bedridden boy's grandfather reads him the story of a farmboy-turned-pirate who encounters numerous obstacles, enemies and allies in his quest to be reunited with his true love.",
+          "year": "1987",
+          "genre": "Adventure, Comedy, Family",
+          "runtime": "98 min",
+          "actors": "Cary Elwes, Mandy Patinkin, Robin Wright"
+        }
+      },
+      {
+        "id": "tt0062803",
+        "title": "Chitty Chitty Bang Bang",
+        "imdb": "tt0062803",
+        "votes": 0,
+        "omdb": {
+          "poster": "https://m.media-amazon.com/images/M/MV5BMzI2MTEwNTYtYWU1MS00NzkwLTk0MjktYjliNzdkYmQzYTEzXkEyXkFqcGc@._V1_SX300.jpg",
+          "plot": "A down-on-his-luck inventor turns a broken-down Grand Prix car into a fancy vehicle for his children, and then they go off on a magical fantasy adventure to save their grandfather in a far-off land.",
+          "year": "1968",
+          "genre": "Adventure, Family, Fantasy",
+          "runtime": "144 min",
+          "actors": "Dick Van Dyke, Sally Ann Howes, Lionel Jeffries"
+        }
+      }
+    ],
+    "status": "open"
   }
 ]

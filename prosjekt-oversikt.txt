@@ -1,0 +1,978 @@
+### FILOVERSIKT: .svelte og .ts ###
+
+===== FIL: ./e2e/demo.test.ts =====
+import { expect, test } from '@playwright/test';
+
+test('home page has expected h1', async ({ page }) => {
+	await page.goto('/');
+	await expect(page.locator('h1')).toBeVisible();
+});
+
+===== FIL: ./playwright.config.ts =====
+import { defineConfig } from '@playwright/test';
+
+export default defineConfig({
+	webServer: {
+		command: 'npm run build && npm run preview',
+		port: 4173
+	},
+	testDir: 'e2e'
+});
+
+===== FIL: ./src/app.d.ts =====
+// See https://svelte.dev/docs/kit/types#app.d.ts
+// for information about these interfaces
+declare global {
+	namespace App {
+		// interface Error {}
+		// interface Locals {}
+		// interface PageData {}
+		// interface PageState {}
+		// interface Platform {}
+	}
+}
+
+export {};
+
+===== FIL: ./src/demo.spec.ts =====
+import { describe, it, expect } from 'vitest';
+
+describe('sum test', () => {
+	it('adds 1 + 2 to equal 3', () => {
+		expect(1 + 2).toBe(3);
+	});
+});
+
+===== FIL: ./src/lib/components/MovieCard.svelte =====
+<script lang="ts">
+    import { createEventDispatcher } from 'svelte';
+    export let movie;
+    export let compact = false;
+    export let showRemove = false;
+  
+    const dispatch = createEventDispatcher();
+  </script>
+  
+  <div class="rounded-xl border p-4 flex gap-4 items-start shadow bg-white">
+    {#if movie.omdb?.poster && movie.omdb.poster !== 'N/A'}
+      <img src={movie.omdb.poster} alt="Poster" class="w-16 rounded-md shadow" />
+    {/if}
+    <div class="flex-1">
+      <h3 class="font-semibold text-lg">{movie.title}</h3>
+      {#if movie.omdb}
+        <p class="text-sm text-gray-600">{movie.omdb.year} • {movie.omdb.genre} • {movie.omdb.runtime}</p>
+        <p class="text-sm mt-1">{movie.omdb.plot}</p>
+      {/if}
+    </div>
+    {#if showRemove}
+      <button on:click={() => dispatch('remove', movie.imdb)} class="text-red-600 text-sm hover:underline">
+        Fjern
+      </button>
+    {/if}
+  </div>
+===== FIL: ./src/lib/components/MovieCardCompact.svelte =====
+<script lang="ts">
+  export let title: string;
+  export let year: string;
+  export let genre: string;
+  export let runtime: string;
+  export let poster: string;
+  export let plot: string;
+  export let actors: string;
+  export let imdb: string;
+  export let showRemove = false;
+
+  import { createEventDispatcher } from 'svelte';
+  const dispatch = createEventDispatcher();
+</script>
+
+<div class="flex border rounded-xl overflow-hidden shadow bg-white">
+  {#if poster && poster !== 'N/A'}
+    <img src={poster} alt={title} class="w-24 h-auto object-cover" />
+  {/if}
+  <div class="p-3 flex-1">
+    <div class="font-semibold text-sm">{title} ({year})</div>
+    <div class="text-xs text-gray-500 italic">{genre} – {runtime}</div>
+    <div class="text-xs mt-1 text-gray-700 line-clamp-3">{plot}</div>
+    <div class="text-xs text-gray-600 mt-1">{actors}</div>
+    {#if showRemove}
+      <button
+        on:click={() => dispatch('remove', imdb)}
+        class="mt-2 text-red-600 hover:underline text-xs">
+        Fjern
+      </button>
+    {/if}
+  </div>
+</div>
+
+<style>
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>
+
+===== FIL: ./src/lib/components/PollEditor.svelte =====
+<script lang="ts">
+  import type { Poll } from '$lib/types';
+  export let poll: Poll;
+
+  let newImdbId = '';
+  const apiKey = import.meta.env.PUBLIC_OMDB_API_KEY;
+
+  async function fetchOMDB(id: string) {
+    const res = await fetch(`https://www.omdbapi.com/?apikey=${apiKey}&i=${id}`);
+    return await res.json();
+  }
+
+  async function addMovieById(id: string) {
+    const trimmedId = id.trim();
+    if (!trimmedId.startsWith('tt')) {
+      alert('IMDb-ID må starte med tt...');
+      return;
+    }
+
+    const exists = poll.movies.some((m) => m.imdb === trimmedId);
+    if (exists) {
+      alert('Denne filmen er allerede lagt til.');
+      return;
+    }
+
+    const data = await fetchOMDB(trimmedId);
+    if (data.Response === 'True') {
+      poll.movies.push({
+        id: trimmedId,
+        title: data.Title,
+        imdb: trimmedId,
+        votes: 0,
+        omdb: {
+          poster: data.Poster,
+          plot: data.Plot,
+          year: data.Year,
+          genre: data.Genre,
+          runtime: data.Runtime
+        }
+      });
+      newImdbId = '';
+    } else {
+      alert(`Fant ikke film med ID ${trimmedId}`);
+    }
+  }
+
+  function removeMovie(imdbId: string) {
+    poll.movies = poll.movies.filter((m) => m.imdb !== imdbId);
+  }
+</script>
+
+<div class="space-y-6">
+  <h2 class="text-2xl font-semibold">Rediger filmvalg</h2>
+
+  <div class="flex flex-col sm:flex-row gap-2 items-start sm:items-end">
+    <input
+      type="text"
+      bind:value={newImdbId}
+      placeholder="IMDb-ID (f.eks. tt0468569)"
+      class="p-2 border rounded w-full sm:w-80"
+    />
+    <button
+      on:click={() => addMovieById(newImdbId)}
+      class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+    >
+      Legg til film
+    </button>
+  </div>
+
+  {#if poll.movies.length === 0}
+    <p class="text-gray-500 italic">Ingen filmer lagt til enda.</p>
+  {/if}
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {#each poll.movies as movie}
+      <div class="bg-white rounded-xl shadow-md overflow-hidden flex flex-col hover:shadow-lg transition-shadow duration-300">
+        {#if movie.omdb?.poster && movie.omdb.poster !== 'N/A'}
+          <img
+            src={movie.omdb.poster}
+            alt={movie.title}
+            class="w-full h-64 object-cover"
+            on:error={(e) => (e.target.style.display = 'none')}
+          />
+        {/if}
+        <div class="p-4 flex-1 flex flex-col justify-between">
+          <div>
+            <h3 class="text-lg font-semibold">{movie.title} ({movie.omdb?.year})</h3>
+            <p class="text-sm text-gray-600 italic">{movie.omdb?.genre} • {movie.omdb?.runtime}</p>
+            <p class="text-sm text-gray-700 mt-2 line-clamp-4">{movie.omdb?.plot || 'Ingen beskrivelse tilgjengelig.'}</p>
+          </div>
+          <button
+            class="mt-4 text-xs text-red-600 hover:underline self-start"
+            on:click={() => removeMovie(movie.imdb)}
+          >
+            Fjern film
+          </button>
+        </div>
+      </div>
+    {/each}
+  </div>
+</div>
+
+===== FIL: ./src/lib/components/PollList.svelte =====
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import MovieList from './MovieList.svelte';
+
+  export let polls = [];
+  let details: Record<string, boolean> = {};
+  let pollDetails: Record<string, any> = {};
+
+  async function toggleDetails(pollId: string) {
+    details[pollId] = !details[pollId];
+    if (details[pollId] && !pollDetails[pollId]) {
+      const res = await fetch(`/api/polls/${pollId}`);
+      pollDetails[pollId] = await res.json();
+    }
+  }
+</script>
+
+<div class="space-y-6">
+  {#each polls as poll}
+    <div class="border p-4 rounded shadow bg-white">
+      <div class="flex justify-between items-center">
+        <div>
+          <h2 class="text-xl font-bold">{poll.title}</h2>
+          <p class="text-gray-600 text-sm">{poll.date} · {poll.status}</p>
+        </div>
+        <button
+          class="px-3 py-1 text-sm bg-blue-500 hover:bg-blue-600 text-white rounded"
+          on:click={() => toggleDetails(poll.id)}>
+          {details[poll.id] ? 'Skjul' : 'Vis'} filmer
+        </button>
+      </div>
+
+      {#if details[poll.id] && pollDetails[poll.id]?.movies}
+        <div class="mt-4">
+          <MovieList movies={pollDetails[poll.id].movies} />
+        </div>
+      {/if}
+    </div>
+  {/each}
+</div>
+
+===== FIL: ./src/lib/components/PollPreview.svelte =====
+<script lang="ts">
+    import MovieCard from '$lib/components/MovieCard.svelte';
+    import { createEventDispatcher } from 'svelte';
+    export let movies = [];
+    export let compact = false;
+    export let showRemove = false;
+  
+    const dispatch = createEventDispatcher();
+  
+    function handleRemove(imdb: string) {
+      dispatch('remove', imdb);
+    }
+  </script>
+  
+  <div class="space-y-4">
+    {#each movies as movie (movie.imdb)}
+      <MovieCard {movie} {compact} {showRemove} on:remove={handleRemove} />
+    {/each}
+  </div>
+  
+===== FIL: ./src/lib/index.ts =====
+// place files you want to import through the `$lib` alias in this folder.
+
+===== FIL: ./src/lib/omdb.ts =====
+import { PUBLIC_OMDB_API_KEY } from '$env/static/private';
+
+export async function fetchOMDBData(imdbID: string) {
+  const res = await fetch(`https://www.omdbapi.com/?apikey=${PUBLIC_OMDB_API_KEY}&i=${imdbID}`);
+  if (!res.ok) throw new Error('Failed to fetch OMDB');
+  return await res.json();
+}
+===== FIL: ./src/routes/+layout.svelte =====
+<script lang="ts">
+	import '../app.css';
+
+	let { children } = $props();
+</script>
+
+{@render children()}
+
+===== FIL: ./src/routes/+page.svelte =====
+<!-- src/routes/+page.svelte -->
+<script>
+    // valgfritt: logg aktiv rute
+    import { page } from '$app/stores';
+    $: console.log('Rute:', $page.url.pathname);
+  </script>
+  
+  <div class="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-center p-8">
+    <h1 class="text-3xl md:text-5xl font-bold text-gray-800 mb-6">
+      Velkommen til <span class="text-purple-600">Filmkveld 🎬</span>
+    </h1>
+    <p class="text-lg text-gray-600 mb-8 max-w-md">
+      Stem frem kveldens filmvalg med dot-voting! Opprett en runde eller bli med i en eksisterende.
+    </p>
+    <div class="flex flex-col gap-4 sm:flex-row">
+      <a href="/admin" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg shadow transition">
+        Opprett en ny avstemning
+      </a>
+      <a href="/vote/test2025" class="bg-white border border-purple-600 text-purple-600 hover:bg-purple-50 px-6 py-3 rounded-lg transition">
+        Gå til stemmeside
+      </a>
+    </div>
+  </div>
+  
+===== FIL: ./src/routes/admin/+page.svelte =====
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import { PUBLIC_OMDB_API_KEY } from '$env/static/public';
+  import MovieCardCompact from '$lib/components/MovieCardCompact.svelte';
+
+  let polls = [];
+  let selectedPoll = null;
+  let editing = false;
+
+  let pollForm = {
+    id: '',
+    title: '',
+    date: '',
+    maxVotes: 3,
+    movies: [],
+    status: 'open'
+  };
+  let newImdb = '';
+  let errorMessage = '';
+
+  async function fetchPolls() {
+    try {
+      const res = await fetch('/api/polls');
+      if (!res.ok) throw new Error('API-respons ikke OK');
+      polls = await res.json();
+    } catch (e) {
+      console.error('Feil ved henting av polls:', e);
+      errorMessage = 'Klarte ikke hente avstemninger.';
+    }
+  }
+
+  function editPoll(poll) {
+    selectedPoll = null;
+    editing = true;
+    pollForm = { ...poll };
+  }
+
+  function viewPoll(poll) {
+    selectedPoll = poll;
+    editing = false;
+  }
+
+  async function deletePoll(pollId: string) {
+    if (!confirm('Er du sikker på at du vil slette denne avstemningen?')) return;
+    try {
+      const res = await fetch(`/api/polls/${pollId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Sletting feilet');
+      await fetchPolls();
+      if (selectedPoll?.id === pollId) selectedPoll = null;
+    } catch (e) {
+      console.error('Feil ved sletting av poll:', e);
+      errorMessage = 'Klarte ikke slette avstemning.';
+    }
+  }
+
+  async function savePoll() {
+    if (!pollForm.id || !pollForm.title || !pollForm.date || pollForm.movies.length === 0) {
+      alert('Fyll ut alle felter og legg til minst én film.');
+      return;
+    }
+    try {
+      const res = await fetch('/api/polls', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pollForm)
+      });
+      if (!res.ok) throw new Error('Opprettelse/oppdatering feilet');
+      await fetchPolls();
+      editing = false;
+      pollForm = { id: '', title: '', date: '', maxVotes: 3, movies: [], status: 'open' };
+      newImdb = '';
+      errorMessage = '';
+    } catch (e) {
+      console.error('Feil ved opprettelse/oppdatering av poll:', e);
+      errorMessage = 'Klarte ikke lagre avstemning.';
+    }
+  }
+
+  async function addMovie() {
+    if (!newImdb.trim()) return;
+    const imdb = newImdb.trim();
+    if (pollForm.movies.find((m) => m.imdb === imdb)) {
+      errorMessage = 'Filmen er allerede lagt til.';
+      return;
+    }
+    try {
+      const res = await fetch(`https://www.omdbapi.com/?apikey=${PUBLIC_OMDB_API_KEY}&i=${imdb}`);
+      const data = await res.json();
+
+      if (data.Response !== 'True') {
+        errorMessage = `Fant ikke film med ID ${imdb}`;
+        return;
+      }
+
+      pollForm.movies = [
+        ...pollForm.movies,
+        {
+          id: imdb,
+          title: data.Title || imdb,
+          imdb,
+          votes: 0,
+          omdb: {
+            poster: data.Poster,
+            plot: data.Plot,
+            year: data.Year,
+            genre: data.Genre,
+            runtime: data.Runtime,
+            actors: data.Actors
+          }
+        }
+      ];
+      errorMessage = '';
+      newImdb = '';
+    } catch (e) {
+      console.error('Feil ved henting av OMDB-data:', e);
+      errorMessage = 'Det oppsto en feil ved henting av filmdata.';
+    }
+  }
+
+  function removeMovie(imdb: string) {
+    pollForm.movies = pollForm.movies.filter(m => m.imdb !== imdb);
+  }
+
+  onMount(fetchPolls);
+</script>
+
+<div class="max-w-4xl mx-auto p-6 space-y-10">
+  <h1 class="text-3xl font-bold text-center">Adminpanel</h1>
+
+  <section class="space-y-6 bg-white border rounded-xl p-6 shadow">
+    <h2 class="text-xl font-semibold">{editing ? 'Oppdater avstemning' : 'Opprett ny avstemning'}</h2>
+
+    <div class="space-y-3">
+      <input bind:value={pollForm.id} placeholder="Kode (f.eks. fredag2025)" class="w-full border p-2 rounded-xl" />
+      <input bind:value={pollForm.title} placeholder="Tittel" class="w-full border p-2 rounded-xl" />
+      <input bind:value={pollForm.date} type="date" class="w-full border p-2 rounded-xl" />
+      <input bind:value={pollForm.maxVotes} type="number" min="1" class="w-full border p-2 rounded-xl" />
+
+      <div class="flex space-x-2">
+        <input bind:value={newImdb} placeholder="IMDb-ID (f.eks. tt0133093)" class="flex-1 border p-2 rounded-xl" />
+        <button on:click={addMovie} class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl">Legg til film</button>
+      </div>
+
+      {#if errorMessage}
+        <div class="text-red-600 text-sm">{errorMessage}</div>
+      {/if}
+
+      {#if pollForm.movies.length > 0}
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {#each pollForm.movies as movie}
+            <MovieCardCompact
+              title={movie.title}
+              year={movie.omdb.year}
+              genre={movie.omdb.genre}
+              runtime={movie.omdb.runtime}
+              poster={movie.omdb.poster}
+              plot={movie.omdb.plot}
+              actors={movie.omdb.actors}
+              imdb={movie.imdb}
+              showRemove={true}
+              on:remove={() => removeMovie(movie.imdb)}
+            />
+          {/each}
+        </div>
+      {/if}
+
+      <div class="flex gap-2">
+        <button on:click={savePoll} class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl">
+          {editing ? 'Oppdater avstemning' : 'Opprett avstemning'}
+        </button>
+
+        {#if editing}
+          <button
+            on:click={() => {
+              editing = false;
+              pollForm = { id: '', title: '', date: '', maxVotes: 3, movies: [], status: 'open' };
+              newImdb = '';
+              errorMessage = '';
+              selectedPoll = null;
+            }}
+            class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-xl border"
+          >
+            Avbryt
+          </button>
+        {/if}
+      </div>
+    </div>
+  </section>
+
+  <section class="space-y-4 bg-white border rounded-xl p-6 shadow">
+    <h2 class="text-xl font-semibold">Filmavstemninger</h2>
+    <ul class="space-y-2">
+      {#each polls as poll}
+        <li class="p-3 border rounded-xl hover:bg-gray-50">
+          <div class="flex justify-between items-center">
+            <div>
+              <div class="font-semibold">{poll.title}</div>
+              <div class="text-sm text-gray-500">{poll.date} – {poll.status}</div>
+            </div>
+            <div class="flex space-x-2">
+              <button on:click={() => editPoll(poll)} class="text-blue-600 hover:underline text-sm">Endre</button>
+              <button on:click={() => viewPoll(poll)} class="text-gray-600 hover:underline text-sm">Vis</button>
+              <button on:click={() => deletePoll(poll.id)} class="text-red-600 hover:underline text-sm">Slett</button>
+            </div>
+          </div>
+        </li>
+      {/each}
+    </ul>
+  </section>
+
+  {#if selectedPoll}
+    <section class="bg-white border rounded-xl p-6 shadow">
+      <h2 class="text-xl font-semibold mb-4">{selectedPoll.title}</h2>
+      <div class="space-y-3">
+        {#each selectedPoll.movies as movie}
+          <MovieCardCompact
+            title={movie.title}
+            year={movie.omdb.year}
+            genre={movie.omdb.genre}
+            runtime={movie.omdb.runtime}
+            poster={movie.omdb.poster}
+            plot={movie.omdb.plot}
+            actors={movie.omdb.actors}
+            imdb={movie.imdb}
+          />
+        {/each}
+      </div>
+    </section>
+  {/if}
+</div>
+
+===== FIL: ./src/routes/api/polls/+server.ts =====
+// src/routes/api/polls/+server.ts
+import { json } from '@sveltejs/kit';
+import { readFile, writeFile } from 'fs/promises';
+const POLLS_FILE = 'data/polls.json';
+
+export async function GET() {
+  const data = await readFile(POLLS_FILE, 'utf-8');
+  return json(JSON.parse(data));
+}
+
+export async function POST({ request }) {
+  const poll = await request.json();
+  const data = JSON.parse(await readFile(POLLS_FILE, 'utf-8'));
+  data.push(poll);
+  await writeFile(POLLS_FILE, JSON.stringify(data, null, 2));
+  return json({ success: true });
+}
+===== FIL: ./src/routes/api/polls/[pollId]/+server.ts =====
+import { json } from '@sveltejs/kit';
+import { readFile, writeFile } from 'fs/promises';
+import { fetchOMDBData } from '$lib/omdb';
+
+const POLLS_FILE = 'data/polls.json';
+
+export async function GET({ params }) {
+  const polls = JSON.parse(await readFile(POLLS_FILE, 'utf-8'));
+  const poll = polls.find((p) => p.id === params.pollId);
+
+  if (!poll) {
+    return json({ error: 'Not found' }, { status: 404 });
+  }
+
+  let updated = false;
+
+  // Hent og lagre OMDB-data dersom det mangler
+  for (const movie of poll.movies) {
+    if (movie.imdb && !movie.omdb) {
+      try {
+        const meta = await fetchOMDBData(movie.imdb);
+        movie.omdb = {
+          poster: meta.Poster,
+          plot: meta.Plot,
+          year: meta.Year,
+          genre: meta.Genre,
+          runtime: meta.Runtime
+        };
+        updated = true;
+      } catch (e) {
+        console.warn(`Klarte ikke hente OMDB-data for ${movie.imdb}:`, e);
+      }
+    }
+  }
+
+  // Lagre tilbake til fil hvis vi beriket noe
+  if (updated) {
+    await writeFile(POLLS_FILE, JSON.stringify(polls, null, 2));
+  }
+
+  return json(poll);
+}
+
+export async function POST({ params, request }) {
+  const { votes } = await request.json();
+  const polls = JSON.parse(await readFile(POLLS_FILE, 'utf-8'));
+  const poll = polls.find((p) => p.id === params.pollId);
+
+  if (!poll) return json({ error: 'Not found' }, { status: 404 });
+
+  for (const vote of votes) {
+    const movie = poll.movies.find((m) => m.id === vote);
+    if (movie) movie.votes += 1;
+  }
+
+  await writeFile(POLLS_FILE, JSON.stringify(polls, null, 2));
+  return json({ success: true });
+}
+
+export async function PATCH({ params }) {
+  const polls = JSON.parse(await readFile(POLLS_FILE, 'utf-8'));
+  const poll = polls.find((p) => p.id === params.pollId);
+
+  if (!poll) return json({ error: 'Not found' }, { status: 404 });
+
+  poll.status = 'closed';
+  await writeFile(POLLS_FILE, JSON.stringify(polls, null, 2));
+  return json({ success: true });
+}
+
+export async function DELETE({ params }) {
+  const polls = JSON.parse(await readFile(POLLS_FILE, 'utf-8'));
+  const updated = polls.filter((p) => p.id !== params.pollId);
+  await writeFile(POLLS_FILE, JSON.stringify(updated, null, 2));
+  return json({ success: true });
+}
+
+===== FIL: ./src/routes/dev/generator/+page.svelte =====
+<script>
+    let imdbIds = 'tt0133093,tt1375666,tt0816692';
+    let apiKey = 'bca81e9b';
+    let output = '';
+    let isLoading = false;
+  
+    async function fetchOMDB(id) {
+      const res = await fetch(`https://www.omdbapi.com/?apikey=${apiKey}&i=${id}`);
+      return res.json();
+    }
+  
+    async function generate() {
+      isLoading = true;
+      output = '';
+      const ids = imdbIds.split(',').map(id => id.trim()).filter(Boolean);
+      const movies = [];
+  
+      for (const id of ids) {
+        const data = await fetchOMDB(id);
+        if (data.Response === 'True') {
+          movies.push({
+            id,
+            title: data.Title,
+            imdb: id,
+            votes: 0,
+            omdb: {
+              poster: data.Poster,
+              plot: data.Plot,
+              year: data.Year,
+              genre: data.Genre,
+              runtime: data.Runtime
+            }
+          });
+        }
+      }
+  
+      const poll = {
+        id: 'testpoll',
+        title: 'Filmkveld',
+        date: new Date().toISOString().split('T')[0],
+        maxVotes: 3,
+        status: 'open',
+        movies
+      };
+  
+      output = JSON.stringify([poll], null, 2);
+      isLoading = false;
+    }
+  
+    function download() {
+      const blob = new Blob([output], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'polls.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+  
+  <div class="p-6 max-w-2xl mx-auto space-y-6">
+    <h1 class="text-xl font-bold">Generer polls.json</h1>
+  
+    <label class="block">
+      IMDb-IDer (kommaseparert):
+      <textarea bind:value={imdbIds} class="w-full p-2 border rounded mt-1" rows="3"></textarea>
+    </label>
+  
+    <label class="block">
+      OMDB API-nøkkel:
+      <input type="text" bind:value={apiKey} class="w-full p-2 border rounded mt-1" />
+    </label>
+  
+    <button
+      on:click={generate}
+      class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+      disabled={isLoading}
+    >
+      {isLoading ? 'Henter data...' : 'Generer'}
+    </button>
+  
+    {#if output}
+      <div class="space-y-2">
+        <pre class="bg-gray-100 p-4 rounded overflow-auto text-sm max-h-96">{output}</pre>
+        <button
+          on:click={download}
+          class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        >
+          Last ned polls.json
+        </button>
+      </div>
+    {/if}
+  </div>
+  
+===== FIL: ./src/routes/page.svelte.test.ts =====
+import { describe, test, expect } from 'vitest';
+import '@testing-library/jest-dom/vitest';
+import { render, screen } from '@testing-library/svelte';
+import Page from './+page.svelte';
+
+describe('/+page.svelte', () => {
+	test('should render h1', () => {
+		render(Page);
+		expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
+	});
+});
+
+===== FIL: ./src/routes/polls/+server.ts =====
+import { json } from '@sveltejs/kit';
+import { readFile } from 'fs/promises';
+import path from 'path';
+
+const POLLS_FILE = path.resolve(process.cwd(), 'data/polls.json');
+
+export async function GET() {
+  const data = await readFile(POLLS_FILE, 'utf-8');
+  return json(JSON.parse(data));
+}
+===== FIL: ./src/routes/vote/[pollId]/+page.svelte =====
+<script>
+  import { onMount } from 'svelte';
+  import { page } from '$app/stores';
+  import { writable, derived, get } from 'svelte/store';
+
+  let poll = null;
+  const usedVotes = writable([]);
+  const remaining = derived(usedVotes, ($usedVotes) =>
+    poll ? poll.maxVotes - $usedVotes.length : 0
+  );
+
+  onMount(async () => {
+    const pollId = get(page).params.pollId;
+    const res = await fetch(`/api/polls/${pollId}`);
+    poll = await res.json();
+
+    const saved = localStorage.getItem(`votes-${poll.id}`);
+    if (saved) {
+      usedVotes.set(JSON.parse(saved));
+    }
+  });
+
+  function incrementVote(movieId) {
+    usedVotes.update((current) => {
+      if (poll && current.length < poll.maxVotes) return [...current, movieId];
+      return current;
+    });
+  }
+
+  function decrementVote(movieId) {
+    usedVotes.update((current) => {
+      const index = current.lastIndexOf(movieId);
+      if (index !== -1) {
+        const copy = [...current];
+        copy.splice(index, 1);
+        return copy;
+      }
+      return current;
+    });
+  }
+
+  async function submitVotes() {
+    const $votes = get(usedVotes);
+    await fetch(`/api/polls/${poll.id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ votes: $votes })
+    });
+    alert('Takk for stemmen!');
+  }
+
+  $: if (poll) {
+    usedVotes.subscribe((v) => {
+      localStorage.setItem(`votes-${poll.id}`, JSON.stringify(v));
+    });
+  }
+</script>
+
+{#if poll}
+  <div class="p-6 max-w-2xl mx-auto space-y-6">
+    <h1 class="text-2xl font-bold text-center">{poll.title}</h1>
+    <p class="text-center text-gray-600">{poll.date}</p>
+
+    {#if poll.status === 'open'}
+      <div class="space-y-4">
+        {#each poll.movies as movie}
+          <div class="bg-white rounded shadow p-4 space-y-3">
+            <div class="flex justify-between items-center">
+              <h2 class="font-semibold text-lg">{movie.title}</h2>
+              <div class="flex space-x-2 items-center">
+                <button on:click={() => decrementVote(movie.id)} class="bg-gray-200 px-2 rounded">−</button>
+                <span class="font-mono">{$usedVotes.filter(v => v === movie.id).length}</span>
+                <button on:click={() => incrementVote(movie.id)} class="bg-gray-200 px-2 rounded">+</button>
+              </div>
+            </div>
+
+            {#if movie.omdb}
+              <div class="flex space-x-4">
+                {#if movie.omdb.poster && movie.omdb.poster !== 'N/A'}
+                  <img src={movie.omdb.poster} alt="Poster" class="w-24 h-auto rounded shadow" />
+                {:else}
+                  <div class="w-24 h-36 bg-gray-100 border flex items-center justify-center rounded shadow text-gray-400 text-xs text-center px-2">
+                    🎮<br />Ingen plakat
+                  </div>
+                {/if}
+                <div class="text-sm text-gray-700 space-y-1">
+                  <p>{movie.omdb.plot}</p>
+                  <p class="text-xs text-gray-500 italic">{movie.omdb.year} · {movie.omdb.genre} · {movie.omdb.runtime}</p>
+                </div>
+              </div>
+            {/if}
+          </div>
+        {/each}
+      </div>
+
+      <div class="text-center text-gray-700 pt-4">
+        Du har {$remaining} {$remaining === 1 ? 'stemme' : 'stemmer'} igjen
+      </div>
+
+      <div class="flex justify-center pt-4">
+        <button
+          class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded shadow disabled:opacity-50"
+          on:click={submitVotes}
+          disabled={$remaining !== 0}
+        >
+          Send inn stemmer
+        </button>
+      </div>
+    {:else}
+      <h2 class="text-lg font-semibold text-center text-gray-700 mb-4">Resultat</h2>
+      <ul class="space-y-4">
+        {#each poll.movies.slice().sort((a, b) => b.votes - a.votes) as movie, i}
+          <li class="bg-white p-4 rounded shadow space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="font-medium">{i + 1}. {movie.title}</span>
+              <span class="text-purple-700 font-semibold">{movie.votes} stemmer</span>
+            </div>
+            {#if movie.omdb}
+              <div class="flex space-x-4 pt-2">
+                {#if movie.omdb.poster && movie.omdb.poster !== 'N/A'}
+                  <img src={movie.omdb.poster} alt="Poster" class="w-20 rounded shadow" />
+                {:else}
+                  <div class="w-20 h-28 bg-gray-100 border flex items-center justify-center rounded shadow text-gray-400 text-xs text-center px-2">
+                    🎮<br />Ingen plakat
+                  </div>
+                {/if}
+                <div class="text-sm text-gray-700">
+                  <div class="mb-1">{movie.omdb.plot}</div>
+                  <div class="text-xs italic text-gray-500">
+                    {movie.omdb.year} · {movie.omdb.genre} · {movie.omdb.runtime}
+                  </div>
+                </div>
+              </div>
+            {/if}
+          </li>
+        {/each}
+      </ul>
+    {/if}
+  </div>
+{:else}
+  <p class="text-red-600 text-center mt-10">
+    ❗ Klarte ikke hente avstemning. Er du sikker på at pollId <strong>{get(page).params.pollId}</strong> finnes i <code>polls.json</code>?
+  </p>
+{/if}
+
+===== FIL: ./src/routes/vote/[pollId]/+page.ts =====
+export const ssr = false;
+
+===== FIL: ./vite.config.ts =====
+import tailwindcss from '@tailwindcss/vite';
+import { svelteTesting } from '@testing-library/svelte/vite';
+import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+	plugins: [tailwindcss(), sveltekit()],
+	test: {
+		workspace: [
+			{
+				extends: './vite.config.ts',
+				plugins: [svelteTesting()],
+				test: {
+					name: 'client',
+					environment: 'jsdom',
+					clearMocks: true,
+					include: ['src/**/*.svelte.{test,spec}.{js,ts}'],
+					exclude: ['src/lib/server/**'],
+					setupFiles: ['./vitest-setup-client.ts']
+				}
+			},
+			{
+				extends: './vite.config.ts',
+				test: {
+					name: 'server',
+					environment: 'node',
+					include: ['src/**/*.{test,spec}.{js,ts}'],
+					exclude: ['src/**/*.svelte.{test,spec}.{js,ts}']
+				}
+			}
+		]
+	}
+});
+
+===== FIL: ./vitest-setup-client.ts =====
+import '@testing-library/jest-dom/vitest';
+import { vi } from 'vitest';
+
+// required for svelte5 + jsdom as jsdom does not support matchMedia
+Object.defineProperty(window, 'matchMedia', {
+	writable: true,
+	enumerable: true,
+	value: vi.fn().mockImplementation((query) => ({
+		matches: false,
+		media: query,
+		onchange: null,
+		addEventListener: vi.fn(),
+		removeEventListener: vi.fn(),
+		dispatchEvent: vi.fn()
+	}))
+});
+
+// add more mocks here if you need them
+
