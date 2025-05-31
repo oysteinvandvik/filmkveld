@@ -1,24 +1,64 @@
-<!-- src/routes/+page.svelte -->
-<script>
-    // valgfritt: logg aktiv rute
-    import { page } from '$app/stores';
-    $: console.log('Rute:', $page.url.pathname);
-  </script>
-  
-  <div class="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-center p-8">
-    <h1 class="text-3xl md:text-5xl font-bold text-gray-800 mb-6">
-      Velkommen til <span class="text-purple-600">Filmkveld 🎬</span>
-    </h1>
-    <p class="text-lg text-gray-600 mb-8 max-w-md">
-      Stem frem kveldens filmvalg med dot-voting! Opprett en runde eller bli med i en eksisterende.
-    </p>
-    <div class="flex flex-col gap-4 sm:flex-row">
-      <a href="/admin" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg shadow transition">
-        Opprett en ny avstemning
-      </a>
-      <a href="/vote/test2025" class="bg-white border border-purple-600 text-purple-600 hover:bg-purple-50 px-6 py-3 rounded-lg transition">
-        Gå til stemmeside
-      </a>
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
+
+  let polls = [];
+  let showAll = false;
+  let errorMessage = '';
+
+  async function fetchPolls() {
+    try {
+      const res = await fetch('/data/polls.json');
+      if (!res.ok) throw new Error('Respons ikke OK');
+      polls = await res.json();
+    } catch (e) {
+      errorMessage = 'Det oppsto en feil ved henting av avstemninger';
+      console.error(e);
+    }
+  }
+
+  $: visiblePolls = showAll ? polls : polls.filter(p => p.status === 'open');
+
+  onMount(fetchPolls);
+</script>
+
+<div class="min-h-screen bg-gradient-to-b from-blue-50 to-white p-6">
+  <div class="max-w-3xl mx-auto space-y-6">
+    <header class="flex justify-between items-center">
+      <h1 class="text-3xl font-bold text-blue-900">🎬 Filmkveld</h1>
+      <button on:click={() => goto('/admin')} class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm">
+        Gå til admin
+      </button>
+    </header>
+
+    <div class="flex items-center space-x-2">
+      <input type="checkbox" bind:checked={showAll} id="showAll" />
+      <label for="showAll" class="text-sm text-gray-700">Vis også avsluttede avstemninger</label>
     </div>
+
+    {#if errorMessage}
+      <div class="text-red-600 text-sm">{errorMessage}</div>
+    {/if}
+
+    {#if visiblePolls.length === 0 && !errorMessage}
+      <p class="text-gray-500 italic">Ingen avstemninger funnet.</p>
+    {/if}
+
+    <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {#each visiblePolls as poll}
+        <li class="border rounded-xl p-4 bg-white shadow hover:shadow-md transition cursor-pointer" on:click={() => goto(`/vote/${poll.id}`)}>
+          <div class="text-lg font-semibold text-blue-800">{poll.title}</div>
+          <div class="text-sm text-gray-500">{poll.date} • {poll.status === 'open' ? 'Åpen' : 'Avsluttet'}</div>
+          <div class="mt-2 text-sm text-gray-600">{poll.movies.length} filmer i avstemningen</div>
+        </li>
+      {/each}
+    </ul>
   </div>
-  
+</div>
+
+<style>
+  input[type="checkbox"]:focus {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+  }
+</style>
