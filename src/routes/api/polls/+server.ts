@@ -1,7 +1,8 @@
 // src/routes/api/polls/+server.ts
 import { json } from '@sveltejs/kit';
 import { readFile, writeFile } from 'fs/promises';
-const POLLS_FILE = 'data/polls.json';
+import path from 'path';
+const POLLS_FILE = path.resolve('static/data/polls.json');
 
 export async function GET() {
   const data = await readFile(POLLS_FILE, 'utf-8');

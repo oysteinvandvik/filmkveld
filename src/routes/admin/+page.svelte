@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { PUBLIC_OMDB_API_KEY } from '$env/static/public';
+  import { goto } from '$app/navigation';
   import MovieCardCompact from '$lib/components/MovieCardCompact.svelte';
 
   let polls = [];
@@ -11,7 +12,7 @@
     id: '',
     title: '',
     date: '',
-    maxVotes: 3,
+    maxVotes:  3,
     movies: [],
     status: 'open'
   };
@@ -60,6 +61,20 @@
     } catch (e) {
       console.error('Feil ved sletting av poll:', e);
       errorMessage = 'Klarte ikke slette avstemning.';
+    }
+  }
+
+  async function closePoll(pollId: string) {
+    const confirmed = confirm('Er du sikker på at du vil avslutte denne avstemningen?');
+    if (!confirmed) return;
+    try {
+      const res = await fetch(`/api/polls/${pollId}`, { method: 'PATCH' });
+      if (!res.ok) throw new Error('Avslutning feilet');
+      await fetchPolls();
+      goto(`/resultat/${pollId}`);
+    } catch (e) {
+      console.error('Feil ved avslutning av poll:', e);
+      errorMessage = 'Klarte ikke avslutte avstemning.';
     }
   }
 
@@ -219,11 +234,14 @@
           <div class="flex justify-between items-center">
             <div>
               <div class="font-semibold">{poll.title}</div>
-              <div class="text-sm text-gray-500">{poll.date} – {poll.status}</div>
+              <div class="text-sm text-gray-500">{poll.date} – {poll.status === 'closed' ? '🔒 Avsluttet' : '🟢 Åpen'}</div>
             </div>
             <div class="flex space-x-2">
               <button on:click={() => editPoll(poll)} class="text-blue-600 hover:underline text-sm">Endre</button>
               <button on:click={() => selectedPoll = poll} class="text-gray-600 hover:underline text-sm">Vis</button>
+              {#if poll.status !== 'closed'}
+                <button on:click={() => closePoll(poll.id)} class="text-red-600 hover:underline text-sm">Avslutt</button>
+              {/if}
               <button on:click={() => deletePoll(poll.id)} class="text-red-600 hover:underline text-sm">Slett</button>
             </div>
           </div>

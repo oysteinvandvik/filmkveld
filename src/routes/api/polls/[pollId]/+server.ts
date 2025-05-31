@@ -2,7 +2,8 @@ import { json } from '@sveltejs/kit';
 import { readFile, writeFile } from 'fs/promises';
 import { fetchOMDBData } from '$lib/omdb';
 
-const POLLS_FILE = 'data/polls.json';
+import path from 'path';
+const POLLS_FILE = path.resolve('static/data/polls.json');
 
 export async function GET({ params }) {
   const polls = JSON.parse(await readFile(POLLS_FILE, 'utf-8'));

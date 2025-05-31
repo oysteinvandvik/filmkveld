@@ -301,34 +301,82 @@ export async function fetchOMDBData(imdbID: string) {
 {@render children()}
 
 ===== FIL: ./src/routes/+page.svelte =====
-<!-- src/routes/+page.svelte -->
-<script>
-    // valgfritt: logg aktiv rute
-    import { page } from '$app/stores';
-    $: console.log('Rute:', $page.url.pathname);
-  </script>
-  
-  <div class="min-h-screen flex flex-col items-center justify-center bg-gray-50 text-center p-8">
-    <h1 class="text-3xl md:text-5xl font-bold text-gray-800 mb-6">
-      Velkommen til <span class="text-purple-600">Filmkveld 🎬</span>
-    </h1>
-    <p class="text-lg text-gray-600 mb-8 max-w-md">
-      Stem frem kveldens filmvalg med dot-voting! Opprett en runde eller bli med i en eksisterende.
-    </p>
-    <div class="flex flex-col gap-4 sm:flex-row">
-      <a href="/admin" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg shadow transition">
-        Opprett en ny avstemning
-      </a>
-      <a href="/vote/test2025" class="bg-white border border-purple-600 text-purple-600 hover:bg-purple-50 px-6 py-3 rounded-lg transition">
-        Gå til stemmeside
-      </a>
-    </div>
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
+
+  let polls = [];
+  let showClosed = false;
+  let errorMessage = '';
+
+  async function fetchPolls() {
+    try {
+      const res = await fetch('/api/polls');
+      if (!res.ok) throw new Error('Kunne ikke hente avstemninger');
+      polls = await res.json();
+    } catch (e) {
+      console.error(e);
+      errorMessage = 'Det oppsto en feil ved henting av avstemninger';
+    }
+  }
+
+  onMount(fetchPolls);
+</script>
+
+<main class="p-6 max-w-3xl mx-auto space-y-8">
+  <h1 class="text-4xl font-bold text-center text-purple-700 flex items-center justify-center gap-2">
+    🎬 Filmkveld
+  </h1>
+
+  <div class="flex justify-between items-center">
+    <button on:click={() => goto('/admin')} class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded shadow">
+      Gå til admin
+    </button>
+
+    <label class="flex items-center gap-2 text-sm">
+      <input type="checkbox" bind:checked={showClosed} class="accent-purple-600" />
+      Vis også avsluttede avstemninger
+    </label>
   </div>
-  
+
+  {#if errorMessage}
+    <p class="text-red-600 text-center">{errorMessage}</p>
+  {:else if polls.length === 0}
+    <p class="text-center text-gray-600 italic">Ingen avstemninger funnet.</p>
+  {:else}
+    <ul class="space-y-4">
+      {#each polls.filter(p => showClosed || p.status !== 'closed') as poll}
+        <li
+          class="bg-white border rounded-xl shadow p-4 flex flex-col gap-2 cursor-pointer hover:bg-purple-50 transition"
+          on:click={() => goto(`/vote/${poll.id}`)}
+        >
+          <div class="flex justify-between items-center">
+            <div>
+              <h2 class="text-xl font-semibold text-gray-800">{poll.title}</h2>
+              <p class="text-sm text-gray-500">
+                {poll.date} • {poll.status === 'closed' ? '🔒 Avsluttet' : '🟢 Åpen'} • {poll.movies.length} filmer
+              </p>
+            </div>
+            <span class="text-purple-600 hover:underline text-sm">Gå til avstemning →</span>
+          </div>
+        </li>
+      {/each}
+    </ul>
+  {/if}
+</main>
+
+<style>
+  input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+  }
+</style>
+
 ===== FIL: ./src/routes/admin/+page.svelte =====
 <script lang="ts">
   import { onMount } from 'svelte';
   import { PUBLIC_OMDB_API_KEY } from '$env/static/public';
+  import { goto } from '$app/navigation';
   import MovieCardCompact from '$lib/components/MovieCardCompact.svelte';
 
   let polls = [];
@@ -339,7 +387,7 @@ export async function fetchOMDBData(imdbID: string) {
     id: '',
     title: '',
     date: '',
-    maxVotes: 3,
+    maxVotes:  3,
     movies: [],
     status: 'open'
   };
@@ -363,9 +411,19 @@ export async function fetchOMDBData(imdbID: string) {
     pollForm = { ...poll };
   }
 
-  function viewPoll(poll) {
-    selectedPoll = poll;
+  function resetPollForm() {
     editing = false;
+    selectedPoll = null;
+    pollForm = {
+      id: '',
+      title: '',
+      date: '',
+      maxVotes: 3,
+      movies: [],
+      status: 'open'
+    };
+    newImdb = '';
+    errorMessage = '';
   }
 
   async function deletePoll(pollId: string) {
@@ -378,6 +436,20 @@ export async function fetchOMDBData(imdbID: string) {
     } catch (e) {
       console.error('Feil ved sletting av poll:', e);
       errorMessage = 'Klarte ikke slette avstemning.';
+    }
+  }
+
+  async function closePoll(pollId: string) {
+    const confirmed = confirm('Er du sikker på at du vil avslutte denne avstemningen?');
+    if (!confirmed) return;
+    try {
+      const res = await fetch(`/api/polls/${pollId}`, { method: 'PATCH' });
+      if (!res.ok) throw new Error('Avslutning feilet');
+      await fetchPolls();
+      goto(`/resultat/${pollId}`);
+    } catch (e) {
+      console.error('Feil ved avslutning av poll:', e);
+      errorMessage = 'Klarte ikke avslutte avstemning.';
     }
   }
 
@@ -394,10 +466,7 @@ export async function fetchOMDBData(imdbID: string) {
       });
       if (!res.ok) throw new Error('Opprettelse/oppdatering feilet');
       await fetchPolls();
-      editing = false;
-      pollForm = { id: '', title: '', date: '', maxVotes: 3, movies: [], status: 'open' };
-      newImdb = '';
-      errorMessage = '';
+      resetPollForm();
     } catch (e) {
       console.error('Feil ved opprettelse/oppdatering av poll:', e);
       errorMessage = 'Klarte ikke lagre avstemning.';
@@ -459,10 +528,33 @@ export async function fetchOMDBData(imdbID: string) {
     <h2 class="text-xl font-semibold">{editing ? 'Oppdater avstemning' : 'Opprett ny avstemning'}</h2>
 
     <div class="space-y-3">
-      <input bind:value={pollForm.id} placeholder="Kode (f.eks. fredag2025)" class="w-full border p-2 rounded-xl" />
-      <input bind:value={pollForm.title} placeholder="Tittel" class="w-full border p-2 rounded-xl" />
-      <input bind:value={pollForm.date} type="date" class="w-full border p-2 rounded-xl" />
-      <input bind:value={pollForm.maxVotes} type="number" min="1" class="w-full border p-2 rounded-xl" />
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <input
+          bind:value={pollForm.id}
+          placeholder="Kode (f.eks. fredag2025)"
+          class="w-full border p-2 rounded-xl"
+          readonly={editing}
+        />
+        <input
+          bind:value={pollForm.title}
+          placeholder="Tittel"
+          class="w-full border p-2 rounded-xl"
+        />
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <input
+          bind:value={pollForm.date}
+          type="date"
+          class="w-full border p-2 rounded-xl"
+        />
+        <input
+          bind:value={pollForm.maxVotes}
+          type="number"
+          min="1"
+          class="w-full border p-2 rounded-xl"
+        />
+      </div>
 
       <div class="flex space-x-2">
         <input bind:value={newImdb} placeholder="IMDb-ID (f.eks. tt0133093)" class="flex-1 border p-2 rounded-xl" />
@@ -499,13 +591,7 @@ export async function fetchOMDBData(imdbID: string) {
 
         {#if editing}
           <button
-            on:click={() => {
-              editing = false;
-              pollForm = { id: '', title: '', date: '', maxVotes: 3, movies: [], status: 'open' };
-              newImdb = '';
-              errorMessage = '';
-              selectedPoll = null;
-            }}
+            on:click={resetPollForm}
             class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-xl border"
           >
             Avbryt
@@ -523,11 +609,14 @@ export async function fetchOMDBData(imdbID: string) {
           <div class="flex justify-between items-center">
             <div>
               <div class="font-semibold">{poll.title}</div>
-              <div class="text-sm text-gray-500">{poll.date} – {poll.status}</div>
+              <div class="text-sm text-gray-500">{poll.date} – {poll.status === 'closed' ? '🔒 Avsluttet' : '🟢 Åpen'}</div>
             </div>
             <div class="flex space-x-2">
               <button on:click={() => editPoll(poll)} class="text-blue-600 hover:underline text-sm">Endre</button>
-              <button on:click={() => viewPoll(poll)} class="text-gray-600 hover:underline text-sm">Vis</button>
+              <button on:click={() => selectedPoll = poll} class="text-gray-600 hover:underline text-sm">Vis</button>
+              {#if poll.status !== 'closed'}
+                <button on:click={() => closePoll(poll.id)} class="text-red-600 hover:underline text-sm">Avslutt</button>
+              {/if}
               <button on:click={() => deletePoll(poll.id)} class="text-red-600 hover:underline text-sm">Slett</button>
             </div>
           </div>
@@ -556,7 +645,6 @@ export async function fetchOMDBData(imdbID: string) {
     </section>
   {/if}
 </div>
-
 ===== FIL: ./src/routes/api/polls/+server.ts =====
 // src/routes/api/polls/+server.ts
 import { json } from '@sveltejs/kit';
@@ -772,6 +860,58 @@ export async function GET() {
   const data = await readFile(POLLS_FILE, 'utf-8');
   return json(JSON.parse(data));
 }
+===== FIL: ./src/routes/resultat/[pollId]/+page.svelte =====
+<script lang="ts">
+    import { page } from '$app/stores';
+    import { onMount } from 'svelte';
+  
+    let poll = null;
+    let errorMessage = '';
+  
+    onMount(async () => {
+      const pollId = $page.params.pollId;
+      try {
+        const res = await fetch('/api/polls');
+        const all = await res.json();
+        poll = all.find(p => p.id === pollId);
+        if (!poll) {
+          errorMessage = 'Avstemningen finnes ikke.';
+        } else if (poll.status !== 'closed') {
+          errorMessage = `Avstemningen "${poll.title}" er ikke avsluttet enda.`;
+        }
+      } catch (e) {
+        errorMessage = 'Kunne ikke hente resultater.';
+      }
+    });
+  </script>
+  
+  <main class="p-6 max-w-3xl mx-auto space-y-6">
+    {#if errorMessage}
+      <p class="text-red-600 text-center text-lg">
+        {errorMessage}
+        <br />
+        <a href="/admin" class="underline text-purple-600">Til admin</a> eller
+        <a href="/" class="underline text-purple-600">til forsiden</a>
+      </p>
+    {:else if poll}
+      <h1 class="text-3xl font-bold text-center text-purple-700">Resultat: {poll.title}</h1>
+      <p class="text-center text-gray-500">
+        {poll.date} – {poll.status === 'closed' ? '🔒 Avsluttet' : '🟢 Åpen'}
+      </p>
+  
+      <ul class="space-y-2 mt-4">
+        {#each poll.movies
+          .slice()
+          .sort((a, b) => (b.votes ?? 0) - (a.votes ?? 0)) as movie, i}
+          <li class="p-4 border rounded-xl bg-white flex justify-between items-center">
+            <span>{i === 0 ? '🏆' : ''} {movie.title}</span>
+            <span class="text-gray-700">{movie.votes ?? 0} stemmer</span>
+          </li>
+        {/each}
+      </ul>
+    {/if}
+  </main>
+  
 ===== FIL: ./src/routes/vote/[pollId]/+page.svelte =====
 <script>
   import { onMount } from 'svelte';
