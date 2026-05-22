@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { platforms, statusLabel, statusColor } from '$lib/constants';
+	import type { WatchlistEntry, Person } from '$lib/types';
 
 	let { data, form } = $props();
 
@@ -33,22 +35,8 @@
 		openLogForms = next;
 	}
 
-	const platforms = ['Netflix', 'HBO Max', 'Viaplay', 'Disney+', 'Apple TV+', 'Kino', 'Hjemme'];
-
-	const statusLabel: Record<string, string> = {
-		watching: '▶ Ser nå',
-		paused: '⏸ Pause',
-		completed: '✓ Ferdig'
-	};
-
-	const statusColor: Record<string, string> = {
-		watching: 'bg-green-100 text-green-700',
-		paused: 'bg-yellow-100 text-yellow-700',
-		completed: 'bg-gray-100 text-gray-500'
-	};
-
 	const filtered = $derived(
-		data.watchlist.filter((e: any) => {
+		(data.watchlist as WatchlistEntry[]).filter((e) => {
 			if (selectedPeopleIds.length > 0) {
 				if (!selectedPeopleIds.every((id) => e.viewerIds.includes(id))) return false;
 			}
@@ -57,9 +45,9 @@
 		})
 	);
 
-	const watching = $derived(filtered.filter((e: any) => e.status === 'watching'));
-	const paused = $derived(filtered.filter((e: any) => e.status === 'paused'));
-	const completed = $derived(filtered.filter((e: any) => e.status === 'completed'));
+	const watching = $derived(filtered.filter((e) => e.status === 'watching'));
+	const paused = $derived(filtered.filter((e) => e.status === 'paused'));
+	const completed = $derived(filtered.filter((e) => e.status === 'completed'));
 	const hasActiveFilter = $derived(selectedPeopleIds.length > 0 || selectedType !== null);
 
 	function formatDate(dateStr: string | null) {
@@ -230,7 +218,7 @@
 	{/if}
 </div>
 
-{#snippet WatchEntry({ entry, people }: any)}
+{#snippet WatchEntry({ entry, people }: { entry: WatchlistEntry; people: Person[] })}
 	<div class="bg-white border rounded-xl shadow overflow-hidden">
 		<div class="flex gap-4 p-4">
 			<!-- Poster -->

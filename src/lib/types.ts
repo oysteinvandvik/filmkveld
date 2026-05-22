@@ -26,6 +26,20 @@ export type WatchLogEntry = {
 	viewerIds: string[];
 };
 
+export type WatchlistEntry = {
+	id: string;
+	status: 'watching' | 'completed' | 'paused';
+	notes: string | null;
+	platform: string | null;
+	started_at: string | null;
+	completed_at: string | null;
+	family_rating: number | null;
+	episode_progress: string | null;
+	movie: Movie;
+	viewerIds: string[];
+	watchLogs: WatchLogEntry[];
+};
+
 export type VotingSession = {
 	id: string;
 	title: string;

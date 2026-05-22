@@ -1,6 +1,6 @@
 import { redirect, fail } from '@sveltejs/kit';
 import { searchTmdb, fetchTmdbDetails } from '$lib/tmdb';
-import type { Movie, Person, WatchLogEntry } from '$lib/types';
+import type { Movie, Person, WatchLogEntry, WatchlistEntry } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession } }) => {
@@ -12,7 +12,6 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 		.select('id, status, notes, created_at, movie_id, platform, started_at, completed_at, family_rating, episode_progress')
 		.order('created_at', { ascending: false });
 
-	console.log('[watching] entries:', entries?.length, 'error:', entriesError?.message);
 
 	const entryIds = (entries ?? []).map((e) => e.id as string);
 	const movieIds = (entries ?? []).map((e) => e.movie_id as number);
@@ -71,7 +70,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 		});
 	}
 
-	const watchlist = (entries ?? [])
+	const watchlist: WatchlistEntry[] = (entries ?? [])
 		.filter((e) => movieMap[e.movie_id])
 		.map((e) => ({
 			id: e.id as string,
@@ -131,7 +130,7 @@ export const actions: Actions = {
 		const poster_url = (details?.posterUrl ?? (form.get('poster_url') as string)) || null;
 		const overview = (details?.overview ?? (form.get('overview') as string)) || null;
 
-		const { error: movieError } = await supabase.from('movies').upsert({
+		await supabase.from('movies').upsert({
 			id: tmdb_id,
 			title,
 			type,
@@ -144,10 +143,8 @@ export const actions: Actions = {
 			seasons: details?.seasons ?? null,
 			original_language: details?.originalLanguage ?? null
 		});
-		console.log('[watching/add] movie upsert error:', movieError?.message);
 
 		const { error } = await supabase.from('watchlist').insert({ movie_id: tmdb_id });
-		console.log('[watching/add] watchlist insert error:', error?.message, 'code:', error?.code);
 		if (error && error.code !== '23505') return fail(500, { error: error.message });
 	},
 
