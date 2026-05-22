@@ -443,8 +443,9 @@
 							<input type="hidden" name="watchlist_id" value={entry.id} />
 							<div class="flex gap-3 items-center">
 								<div>
-									<label class="text-xs text-gray-500 block mb-1">Dato</label>
+									<label for="log-date-{entry.id}" class="text-xs text-gray-500 block mb-1">Dato</label>
 									<input
+										id="log-date-{entry.id}"
 										type="date"
 										name="watched_at"
 										value={today}
@@ -452,8 +453,9 @@
 									/>
 								</div>
 								<div class="flex-1">
-									<label class="text-xs text-gray-500 block mb-1">Notis (valgfritt)</label>
+									<label for="log-notes-{entry.id}" class="text-xs text-gray-500 block mb-1">Notis (valgfritt)</label>
 									<input
+										id="log-notes-{entry.id}"
 										type="text"
 										name="notes"
 										placeholder="f.eks. sesongfinale!"

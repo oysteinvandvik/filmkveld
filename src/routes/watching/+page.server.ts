@@ -128,8 +128,8 @@ export const actions: Actions = {
 
 		const title = details?.title ?? (form.get('title') as string);
 		const year = details?.year ?? (form.get('year') as string);
-		const poster_url = details?.posterUrl ?? (form.get('poster_url') as string) || null;
-		const overview = details?.overview ?? (form.get('overview') as string) || null;
+		const poster_url = (details?.posterUrl ?? (form.get('poster_url') as string)) || null;
+		const overview = (details?.overview ?? (form.get('overview') as string)) || null;
 
 		const { error: movieError } = await supabase.from('movies').upsert({
 			id: tmdb_id,
