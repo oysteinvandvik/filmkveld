@@ -13,8 +13,8 @@ export const GET: RequestHandler = async ({ url, locals: { supabase } }) => {
 	if (token_hash && type) {
 		const { error } = await supabase.auth.verifyOtp({ type, token_hash });
 		if (!error) {
-			// First-time invite: send to password-setup page
-			if (type === 'invite') redirect(303, '/auth/set-password');
+			// Invite and password recovery both go to set-password
+			if (type === 'invite' || type === 'recovery') redirect(303, '/auth/set-password');
 			redirect(303, '/');
 		}
 	}

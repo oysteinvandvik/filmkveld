@@ -1,4 +1,4 @@
-import { redirect } from '@sveltejs/kit';
+import { redirect, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals: { safeGetSession } }) => {
@@ -7,14 +7,29 @@ export const load: PageServerLoad = async ({ locals: { safeGetSession } }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, locals: { supabase } }) => {
+	login: async ({ request, locals: { supabase } }) => {
 		const form = await request.formData();
 		const email = form.get('email') as string;
 		const password = form.get('password') as string;
 
 		const { error } = await supabase.auth.signInWithPassword({ email, password });
-		if (error) return { error: error.message };
+		if (error) return fail(400, { error: error.message });
 
 		redirect(303, '/');
+	},
+
+	resetPassword: async ({ request, url, locals: { supabase } }) => {
+		const form = await request.formData();
+		const email = (form.get('email') as string)?.trim();
+
+		if (!email) return fail(400, { resetError: 'Skriv inn e-postadressen din' });
+
+		const { error } = await supabase.auth.resetPasswordForEmail(email, {
+			redirectTo: `${url.origin}/auth/confirm`
+		});
+
+		if (error) return fail(500, { resetError: error.message });
+
+		return { resetSent: true };
 	}
 };
