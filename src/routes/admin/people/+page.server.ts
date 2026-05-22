@@ -39,9 +39,14 @@ export const actions: Actions = {
 		if (updateError) return fail(500, { inviteError: updateError.message, inviteId: id });
 
 		// Send invite email via Supabase Admin API
-		const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-			redirectTo: `${url.origin}/auth/confirm`
+		const redirectTo = `${url.origin}/auth/confirm`;
+		console.log('[invite] sending to:', email, 'redirectTo:', redirectTo);
+
+		const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+			redirectTo
 		});
+
+		console.log('[invite] result:', JSON.stringify({ data: inviteData?.user?.email, error: inviteError?.message }));
 
 		if (inviteError) {
 			// "User already registered" is fine — they just need to log in normally
