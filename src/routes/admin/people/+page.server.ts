@@ -1,5 +1,6 @@
 import { requireAuth } from '$lib/server/auth';
-import { redirect, fail } from '@sveltejs/kit';
+import { supabaseAdmin } from '$lib/server/supabaseAdmin';
+import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession } }) => {
@@ -19,6 +20,37 @@ export const actions: Actions = {
 
 		const { error } = await supabase.from('people').insert({ name });
 		if (error) return fail(500, { error: error.message });
+	},
+
+	invite: async ({ request, url, locals: { supabase, safeGetSession } }) => {
+		await requireAuth(safeGetSession);
+
+		const form = await request.formData();
+		const id = form.get('id') as string;
+		const email = (form.get('email') as string)?.trim().toLowerCase();
+
+		if (!email) return fail(400, { inviteError: 'E-post er påkrevd', inviteId: id });
+
+		// Store email on person record
+		const { error: updateError } = await supabase
+			.from('people')
+			.update({ email })
+			.eq('id', id);
+		if (updateError) return fail(500, { inviteError: updateError.message, inviteId: id });
+
+		// Send invite email via Supabase Admin API
+		const { error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+			redirectTo: `${url.origin}/auth/confirm`
+		});
+
+		if (inviteError) {
+			// "User already registered" is fine — they just need to log in
+			if (!inviteError.message.includes('already')) {
+				return fail(500, { inviteError: inviteError.message, inviteId: id });
+			}
+		}
+
+		return { inviteSent: true, inviteId: id };
 	},
 
 	delete: async ({ request, locals: { supabase, safeGetSession } }) => {
