@@ -49,13 +49,8 @@ export const actions: Actions = {
 		console.log('[invite] result:', JSON.stringify({ data: inviteData?.user?.email, error: inviteError?.message }));
 
 		if (inviteError) {
-			// "User already registered" is fine — they just need to log in normally
-			const isAlreadyRegistered =
-				inviteError.message.toLowerCase().includes('already') ||
-				inviteError.message.toLowerCase().includes('registered');
-			if (!isAlreadyRegistered) {
-				return fail(500, { inviteError: inviteError.message, inviteId: id });
-			}
+			// Always show the full error so we can debug
+			return fail(500, { inviteError: inviteError.message, inviteId: id });
 		}
 
 		return { inviteSent: true, inviteId: id };
