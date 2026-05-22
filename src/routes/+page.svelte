@@ -1,70 +1,60 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { goto } from '$app/navigation';
+	import { goto } from '$app/navigation';
 
-  let polls = [];
-  let showClosed = false;
-  let errorMessage = '';
+	let { data } = $props();
 
-  async function fetchPolls() {
-    try {
-      const res = await fetch('/api/polls');
-      if (!res.ok) throw new Error('Kunne ikke hente avstemninger');
-      polls = await res.json();
-    } catch (e) {
-      console.error(e);
-      errorMessage = 'Det oppsto en feil ved henting av avstemninger';
-    }
-  }
-
-  onMount(fetchPolls);
+	const open = $derived(data.sessions.filter((s: any) => s.status === 'open'));
+	const closed = $derived(data.sessions.filter((s: any) => s.status === 'closed'));
 </script>
 
-<main class="p-6 max-w-3xl mx-auto space-y-8">
-  <h1 class="text-4xl font-bold text-center text-purple-700 flex items-center justify-center gap-2">
-    🎬 Filmkveld
-  </h1>
+<div class="max-w-2xl mx-auto p-6 space-y-8">
+	<h1 class="text-3xl font-bold text-center text-purple-700 pt-4">Filmkveld</h1>
 
-  <div class="flex justify-between items-center">
-    <button on:click={() => goto('/admin')} class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded shadow">
-      Gå til admin
-    </button>
+	{#if open.length === 0 && closed.length === 0}
+		<p class="text-center text-gray-500 italic">Ingen avstemninger ennå. Opprett en i admin.</p>
+	{/if}
 
-    <label class="flex items-center gap-2 text-sm">
-      <input type="checkbox" bind:checked={showClosed} class="accent-purple-600" />
-      Vis også avsluttede avstemninger
-    </label>
-  </div>
+	{#if open.length > 0}
+		<section class="space-y-3">
+			<h2 class="text-lg font-semibold text-gray-700">Åpne avstemninger</h2>
+			{#each open as session}
+				<button
+					onclick={() => goto(`/vote/${session.id}`)}
+					class="w-full text-left bg-white border rounded-xl shadow p-4 hover:bg-purple-50 transition"
+				>
+					<div class="flex justify-between items-center">
+						<div>
+							<p class="font-semibold text-gray-800">{session.title}</p>
+							{#if session.date}
+							<p class="text-sm text-gray-500">{session.date}</p>
+						{/if}
+						</div>
+						<span class="text-green-600 text-sm font-medium">Stem →</span>
+					</div>
+				</button>
+			{/each}
+		</section>
+	{/if}
 
-  {#if errorMessage}
-    <p class="text-red-600 text-center">{errorMessage}</p>
-  {:else if polls.length === 0}
-    <p class="text-center text-gray-600 italic">Ingen avstemninger funnet.</p>
-  {:else}
-    <ul class="space-y-4">
-      {#each polls.filter(p => showClosed || p.status !== 'closed') as poll}
-        <li
-          class="bg-white border rounded-xl shadow p-4 flex flex-col gap-2 cursor-pointer hover:bg-purple-50 transition"
-          on:click={() => goto(`/vote/${poll.id}`)}
-        >
-          <div class="flex justify-between items-center">
-            <div>
-              <h2 class="text-xl font-semibold text-gray-800">{poll.title}</h2>
-              <p class="text-sm text-gray-500">
-                {poll.date} • {poll.status === 'closed' ? '🔒 Avsluttet' : '🟢 Åpen'} • {poll.movies.length} filmer
-              </p>
-            </div>
-            <span class="text-purple-600 hover:underline text-sm">Gå til avstemning →</span>
-          </div>
-        </li>
-      {/each}
-    </ul>
-  {/if}
-</main>
-
-<style>
-  input[type="checkbox"] {
-    width: 1rem;
-    height: 1rem;
-  }
-</style>
+	{#if closed.length > 0}
+		<section class="space-y-3">
+			<h2 class="text-lg font-semibold text-gray-700">Avsluttede</h2>
+			{#each closed as session}
+				<button
+					onclick={() => goto(`/results/${session.id}`)}
+					class="w-full text-left bg-white border rounded-xl p-4 hover:bg-gray-50 transition opacity-75"
+				>
+					<div class="flex justify-between items-center">
+						<div>
+							<p class="font-semibold text-gray-800">{session.title}</p>
+							{#if session.date}
+								<p class="text-sm text-gray-500">{session.date}</p>
+							{/if}
+						</div>
+						<span class="text-gray-500 text-sm">Resultater →</span>
+					</div>
+				</button>
+			{/each}
+		</section>
+	{/if}
+</div>
