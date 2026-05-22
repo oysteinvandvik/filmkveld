@@ -13,6 +13,7 @@
 	// Filter-state
 	let selectedPeopleIds = $state<string[]>([]);
 	let selectedType = $state<string | null>(null);
+	let selectedStatus = $state<'watching' | 'paused' | 'completed' | 'all'>('watching');
 
 	function togglePerson(id: string) {
 		selectedPeopleIds = selectedPeopleIds.includes(id)
@@ -20,20 +21,40 @@
 			: [...selectedPeopleIds, id];
 	}
 
+	const statusOptions: { value: 'watching' | 'paused' | 'completed' | 'all'; label: string }[] = [
+		{ value: 'watching', label: '▶ Ser nå' },
+		{ value: 'paused', label: '⏸ Pause' },
+		{ value: 'completed', label: '✓ Ferdig' },
+		{ value: 'all', label: 'Alle' }
+	];
+
 	const filtered = $derived(
 		(data.watchlist as WatchlistEntry[]).filter((e) => {
 			if (selectedPeopleIds.length > 0) {
 				if (!selectedPeopleIds.every((id) => e.viewerIds.includes(id))) return false;
 			}
 			if (selectedType && e.movie.type !== selectedType) return false;
+			if (selectedStatus !== 'all' && e.status !== selectedStatus) return false;
 			return true;
 		})
 	);
 
+	// For "alle"-visning: grupper i seksjoner
 	const watching = $derived(filtered.filter((e) => e.status === 'watching'));
 	const paused = $derived(filtered.filter((e) => e.status === 'paused'));
 	const completed = $derived(filtered.filter((e) => e.status === 'completed'));
-	const hasActiveFilter = $derived(selectedPeopleIds.length > 0 || selectedType !== null);
+
+	// Nullstill-knappen er aktiv hvis noe avviker fra default
+	const hasActiveFilter = $derived(
+		selectedPeopleIds.length > 0 || selectedType !== null || selectedStatus !== 'watching'
+	);
+
+	// Antall per status for badges
+	const counts = $derived({
+		watching: (data.watchlist as WatchlistEntry[]).filter((e) => e.status === 'watching').length,
+		paused: (data.watchlist as WatchlistEntry[]).filter((e) => e.status === 'paused').length,
+		completed: (data.watchlist as WatchlistEntry[]).filter((e) => e.status === 'completed').length
+	});
 </script>
 
 <div class="max-w-3xl mx-auto p-6 space-y-6">
@@ -49,6 +70,33 @@
 
 	<!-- Filter -->
 	<section class="bg-white border rounded-xl p-4 shadow-sm space-y-3">
+		<!-- Status -->
+		<div>
+			<p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Status</p>
+			<div class="flex flex-wrap gap-2">
+				{#each statusOptions as opt}
+					{@const active = selectedStatus === opt.value}
+					{@const count = opt.value !== 'all' ? counts[opt.value] : null}
+					<button
+						onclick={() => (selectedStatus = opt.value)}
+						class="text-sm px-3 py-1.5 rounded-full transition font-medium flex items-center gap-1.5 {active
+							? 'bg-purple-600 text-white'
+							: 'bg-gray-100 text-gray-600 hover:bg-gray-200'}"
+					>
+						{opt.label}
+						{#if count !== null && count > 0}
+							<span
+								class="text-xs rounded-full px-1.5 py-0.5 leading-none {active
+									? 'bg-white/25 text-white'
+									: 'bg-gray-200 text-gray-500'}"
+							>{count}</span>
+						{/if}
+					</button>
+				{/each}
+			</div>
+		</div>
+
+		<!-- Hvem ser -->
 		{#if data.people.length > 0}
 			<div>
 				<p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Hvem ser</p>
@@ -68,6 +116,7 @@
 			</div>
 		{/if}
 
+		<!-- Type -->
 		<div>
 			<p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Type</p>
 			<div class="flex gap-2">
@@ -90,6 +139,7 @@
 				onclick={() => {
 					selectedPeopleIds = [];
 					selectedType = null;
+					selectedStatus = 'watching';
 				}}
 				class="text-xs text-gray-400 hover:text-gray-600 underline"
 			>
@@ -187,39 +237,47 @@
 		</section>
 	{/if}
 
-	<!-- Ser nå -->
-	{#if watching.length > 0}
-		<section class="space-y-3">
-			<h2 class="text-base font-semibold text-gray-700">▶ Ser nå</h2>
-			{#each watching as entry}
-				<WatchEntry {entry} people={data.people} />
-			{/each}
-		</section>
-	{/if}
-
-	<!-- Pause -->
-	{#if paused.length > 0}
-		<section class="space-y-3">
-			<h2 class="text-base font-semibold text-gray-700">⏸ Pause</h2>
-			{#each paused as entry}
-				<WatchEntry {entry} people={data.people} />
-			{/each}
-		</section>
-	{/if}
-
-	<!-- Ferdig -->
-	{#if completed.length > 0}
-		<section class="space-y-3">
-			<h2 class="text-base font-semibold text-gray-700">✓ Ferdig</h2>
-			{#each completed as entry}
-				<WatchEntry {entry} people={data.people} />
-			{/each}
-		</section>
+	<!-- Innhold -->
+	{#if selectedStatus === 'all'}
+		{#if watching.length > 0}
+			<section class="space-y-3">
+				<h2 class="text-base font-semibold text-gray-700">▶ Ser nå</h2>
+				{#each watching as entry}
+					<WatchEntry {entry} people={data.people} />
+				{/each}
+			</section>
+		{/if}
+		{#if paused.length > 0}
+			<section class="space-y-3">
+				<h2 class="text-base font-semibold text-gray-700">⏸ Pause</h2>
+				{#each paused as entry}
+					<WatchEntry {entry} people={data.people} />
+				{/each}
+			</section>
+		{/if}
+		{#if completed.length > 0}
+			<section class="space-y-3">
+				<h2 class="text-base font-semibold text-gray-700">✓ Ferdig</h2>
+				{#each completed as entry}
+					<WatchEntry {entry} people={data.people} />
+				{/each}
+			</section>
+		{/if}
+	{:else}
+		{#if filtered.length > 0}
+			<section class="space-y-3">
+				{#each filtered as entry}
+					<WatchEntry {entry} people={data.people} />
+				{/each}
+			</section>
+		{/if}
 	{/if}
 
 	{#if filtered.length === 0}
 		<p class="text-center text-gray-400 italic">
-			{hasActiveFilter ? 'Ingen treff for valgte filter.' : 'Ingen filmer eller serier lagt til ennå.'}
+			{hasActiveFilter
+				? 'Ingen treff for valgte filter.'
+				: 'Ingen filmer eller serier lagt til ennå.'}
 		</p>
 	{/if}
 </div>
