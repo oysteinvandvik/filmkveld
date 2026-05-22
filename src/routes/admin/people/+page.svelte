@@ -83,11 +83,15 @@
 				</form>
 
 				{#if justInvited}
-					<p class="text-xs text-green-600">✓ Invitasjon sendt til {person.email}</p>
+					{#if form?.alreadyRegistered}
+						<p class="text-xs text-blue-600">✓ Allerede registrert — kan logge inn direkte</p>
+					{:else}
+						<p class="text-xs text-green-600">✓ Invitasjon sendt til {person.email}</p>
+					{/if}
 				{:else if inviteError}
 					<p class="text-xs text-red-600">{inviteError}</p>
 				{:else if person.email}
-					<p class="text-xs text-gray-400">Invitert: {person.email}</p>
+					<p class="text-xs text-gray-400">{person.email}</p>
 				{/if}
 			</div>
 		{/each}
