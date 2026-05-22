@@ -44,8 +44,11 @@ export const actions: Actions = {
 		});
 
 		if (inviteError) {
-			// "User already registered" is fine — they just need to log in
-			if (!inviteError.message.includes('already')) {
+			// "User already registered" is fine — they just need to log in normally
+			const isAlreadyRegistered =
+				inviteError.message.toLowerCase().includes('already') ||
+				inviteError.message.toLowerCase().includes('registered');
+			if (!isAlreadyRegistered) {
 				return fail(500, { inviteError: inviteError.message, inviteId: id });
 			}
 		}
