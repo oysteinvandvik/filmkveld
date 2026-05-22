@@ -1,10 +1,10 @@
+import { requireAuth } from '$lib/server/auth';
 import { redirect, fail } from '@sveltejs/kit';
 import type { Movie } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals: { supabase, safeGetSession } }) => {
-	const { session } = await safeGetSession();
-	if (!session) redirect(303, '/login');
+	await requireAuth(safeGetSession);
 
 	const [{ data: votingSession }, { data: candidates }, { data: participantRows }, { data: allVotes }] =
 		await Promise.all([
@@ -35,8 +35,7 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, safeGet
 
 export const actions: Actions = {
 	vote: async ({ request, params, locals: { supabase, safeGetSession } }) => {
-		const { session } = await safeGetSession();
-		if (!session) redirect(303, '/login');
+		await requireAuth(safeGetSession);
 
 		const form = await request.formData();
 		const person_id = form.get('person_id') as string;

@@ -1,24 +1,21 @@
+import { requireAuth } from '$lib/server/auth';
 import { redirect, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession } }) => {
-	const { session } = await safeGetSession();
-	if (!session) redirect(303, '/login');
+	await requireAuth(safeGetSession);
 
-	const [{ data: sessions, error: sessionsError }, { data: people }] = await Promise.all([
+	const [{ data: sessions }, { data: people }] = await Promise.all([
 		supabase.from('voting_sessions').select('*').order('created_at', { ascending: false }),
 		supabase.from('people').select('*').order('name')
 	]);
-
-	console.log('[admin] sessions:', sessions?.length, 'error:', sessionsError?.message);
 
 	return { sessions: sessions ?? [], people: people ?? [] };
 };
 
 export const actions: Actions = {
 	createSession: async ({ request, locals: { supabase, safeGetSession } }) => {
-		const { session } = await safeGetSession();
-		if (!session) redirect(303, '/login');
+		await requireAuth(safeGetSession);
 
 		const form = await request.formData();
 		const title = form.get('title') as string;
@@ -38,8 +35,7 @@ export const actions: Actions = {
 	},
 
 	closeSession: async ({ request, locals: { supabase, safeGetSession } }) => {
-		const { session } = await safeGetSession();
-		if (!session) redirect(303, '/login');
+		await requireAuth(safeGetSession);
 
 		const form = await request.formData();
 		const id = form.get('id') as string;
@@ -51,8 +47,7 @@ export const actions: Actions = {
 	},
 
 	deleteSession: async ({ request, locals: { supabase, safeGetSession } }) => {
-		const { session } = await safeGetSession();
-		if (!session) redirect(303, '/login');
+		await requireAuth(safeGetSession);
 
 		const form = await request.formData();
 		const id = form.get('id') as string;

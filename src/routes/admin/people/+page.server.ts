@@ -1,9 +1,9 @@
+import { requireAuth } from '$lib/server/auth';
 import { redirect, fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession } }) => {
-	const { session } = await safeGetSession();
-	if (!session) redirect(303, '/login');
+	await requireAuth(safeGetSession);
 
 	const { data: people } = await supabase.from('people').select('*').order('name');
 	return { people: people ?? [] };
@@ -11,8 +11,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 
 export const actions: Actions = {
 	add: async ({ request, locals: { supabase, safeGetSession } }) => {
-		const { session } = await safeGetSession();
-		if (!session) redirect(303, '/login');
+		await requireAuth(safeGetSession);
 
 		const form = await request.formData();
 		const name = (form.get('name') as string)?.trim();
@@ -23,8 +22,7 @@ export const actions: Actions = {
 	},
 
 	delete: async ({ request, locals: { supabase, safeGetSession } }) => {
-		const { session } = await safeGetSession();
-		if (!session) redirect(303, '/login');
+		await requireAuth(safeGetSession);
 
 		const form = await request.formData();
 		const id = form.get('id') as string;

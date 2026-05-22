@@ -1,10 +1,10 @@
+import { requireAuth } from '$lib/server/auth';
 import { redirect } from '@sveltejs/kit';
 import type { Movie } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals: { supabase, safeGetSession } }) => {
-	const { session } = await safeGetSession();
-	if (!session) redirect(303, '/login');
+	await requireAuth(safeGetSession);
 
 	const [{ data: votingSession }, { data: candidates }, { data: votes }, { data: participants }] =
 		await Promise.all([

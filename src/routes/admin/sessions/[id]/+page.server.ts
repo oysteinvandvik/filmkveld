@@ -1,11 +1,11 @@
+import { requireAuth } from '$lib/server/auth';
 import { redirect, fail } from '@sveltejs/kit';
 import { searchTmdb } from '$lib/tmdb';
 import type { Movie, Person } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, locals: { supabase, safeGetSession } }) => {
-	const { session } = await safeGetSession();
-	if (!session) redirect(303, '/login');
+	await requireAuth(safeGetSession);
 
 	const [{ data: votingSession }, { data: candidates }, { data: participantRows }, { data: people }, { data: allSessions }] =
 		await Promise.all([
@@ -43,8 +43,7 @@ export const load: PageServerLoad = async ({ params, locals: { supabase, safeGet
 
 export const actions: Actions = {
 	searchMovies: async ({ request, locals: { safeGetSession } }) => {
-		const { session } = await safeGetSession();
-		if (!session) redirect(303, '/login');
+		await requireAuth(safeGetSession);
 
 		const form = await request.formData();
 		const query = form.get('query') as string;
@@ -59,8 +58,7 @@ export const actions: Actions = {
 	},
 
 	addCandidate: async ({ request, params, locals: { supabase, safeGetSession } }) => {
-		const { session } = await safeGetSession();
-		if (!session) redirect(303, '/login');
+		await requireAuth(safeGetSession);
 
 		const form = await request.formData();
 		const tmdb_id = Number(form.get('tmdb_id'));
@@ -85,8 +83,7 @@ export const actions: Actions = {
 	},
 
 	removeCandidate: async ({ request, locals: { supabase, safeGetSession } }) => {
-		const { session } = await safeGetSession();
-		if (!session) redirect(303, '/login');
+		await requireAuth(safeGetSession);
 
 		const form = await request.formData();
 		const candidate_id = form.get('candidate_id') as string;
@@ -94,8 +91,7 @@ export const actions: Actions = {
 	},
 
 	addParticipant: async ({ request, params, locals: { supabase, safeGetSession } }) => {
-		const { session } = await safeGetSession();
-		if (!session) redirect(303, '/login');
+		await requireAuth(safeGetSession);
 
 		const form = await request.formData();
 		const person_id = form.get('person_id') as string;
@@ -106,8 +102,7 @@ export const actions: Actions = {
 	},
 
 	removeParticipant: async ({ request, params, locals: { supabase, safeGetSession } }) => {
-		const { session } = await safeGetSession();
-		if (!session) redirect(303, '/login');
+		await requireAuth(safeGetSession);
 
 		const form = await request.formData();
 		const person_id = form.get('person_id') as string;
@@ -119,8 +114,7 @@ export const actions: Actions = {
 	},
 
 	copyFromSession: async ({ request, params, locals: { supabase, safeGetSession } }) => {
-		const { session } = await safeGetSession();
-		if (!session) redirect(303, '/login');
+		await requireAuth(safeGetSession);
 
 		const form = await request.formData();
 		const source_session_id = form.get('source_session_id') as string;

@@ -1,11 +1,11 @@
+import { requireAuth } from '$lib/server/auth';
 import { redirect, fail } from '@sveltejs/kit';
 import { searchTmdb, fetchTmdbDetails } from '$lib/tmdb';
 import type { Movie, Person, WatchLogEntry, WatchlistEntry } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession } }) => {
-	const { session } = await safeGetSession();
-	if (!session) redirect(303, '/login');
+	await requireAuth(safeGetSession);
 
 	const { data: entries, error: entriesError } = await supabase
 		.from('watchlist')
@@ -94,8 +94,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 
 export const actions: Actions = {
 	search: async ({ request, locals: { safeGetSession } }) => {
-		const { session } = await safeGetSession();
-		if (!session) redirect(303, '/login');
+		await requireAuth(safeGetSession);
 
 		const form = await request.formData();
 		const query = form.get('query') as string;
@@ -110,8 +109,7 @@ export const actions: Actions = {
 	},
 
 	add: async ({ request, locals: { supabase, safeGetSession } }) => {
-		const { session } = await safeGetSession();
-		if (!session) redirect(303, '/login');
+		await requireAuth(safeGetSession);
 
 		const form = await request.formData();
 		const tmdb_id = Number(form.get('tmdb_id'));
@@ -149,8 +147,7 @@ export const actions: Actions = {
 	},
 
 	remove: async ({ request, locals: { supabase, safeGetSession } }) => {
-		const { session } = await safeGetSession();
-		if (!session) redirect(303, '/login');
+		await requireAuth(safeGetSession);
 
 		const form = await request.formData();
 		const id = form.get('id') as string;
@@ -158,8 +155,7 @@ export const actions: Actions = {
 	},
 
 	setStatus: async ({ request, locals: { supabase, safeGetSession } }) => {
-		const { session } = await safeGetSession();
-		if (!session) redirect(303, '/login');
+		await requireAuth(safeGetSession);
 
 		const form = await request.formData();
 		const id = form.get('id') as string;
@@ -182,8 +178,7 @@ export const actions: Actions = {
 	},
 
 	toggleViewer: async ({ request, locals: { supabase, safeGetSession } }) => {
-		const { session } = await safeGetSession();
-		if (!session) redirect(303, '/login');
+		await requireAuth(safeGetSession);
 
 		const form = await request.formData();
 		const watchlist_id = form.get('watchlist_id') as string;
@@ -202,8 +197,7 @@ export const actions: Actions = {
 	},
 
 	setPlatform: async ({ request, locals: { supabase, safeGetSession } }) => {
-		const { session } = await safeGetSession();
-		if (!session) redirect(303, '/login');
+		await requireAuth(safeGetSession);
 
 		const form = await request.formData();
 		const id = form.get('id') as string;
@@ -212,8 +206,7 @@ export const actions: Actions = {
 	},
 
 	setFamilyRating: async ({ request, locals: { supabase, safeGetSession } }) => {
-		const { session } = await safeGetSession();
-		if (!session) redirect(303, '/login');
+		await requireAuth(safeGetSession);
 
 		const form = await request.formData();
 		const id = form.get('id') as string;
@@ -225,8 +218,7 @@ export const actions: Actions = {
 	},
 
 	setEpisodeProgress: async ({ request, locals: { supabase, safeGetSession } }) => {
-		const { session } = await safeGetSession();
-		if (!session) redirect(303, '/login');
+		await requireAuth(safeGetSession);
 
 		const form = await request.formData();
 		const id = form.get('id') as string;
@@ -235,8 +227,7 @@ export const actions: Actions = {
 	},
 
 	logWatch: async ({ request, locals: { supabase, safeGetSession } }) => {
-		const { session } = await safeGetSession();
-		if (!session) redirect(303, '/login');
+		await requireAuth(safeGetSession);
 
 		const form = await request.formData();
 		const watchlist_id = form.get('watchlist_id') as string;
