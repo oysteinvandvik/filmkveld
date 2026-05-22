@@ -7,6 +7,7 @@
 
 	let showLogs = $state(false);
 	let showLogForm = $state(false);
+	let showSettings = $state(!!(entry.platform || entry.family_rating || entry.episode_progress));
 	let savingLog = $state(false);
 
 	const today = new Date().toISOString().split('T')[0];
@@ -19,48 +20,61 @@
 			year: 'numeric'
 		});
 	}
+
+	// Summary shown in the settings toggle when collapsed
+	const settingsSummary = $derived(
+		[
+			entry.platform,
+			entry.family_rating ? '★'.repeat(entry.family_rating) : null,
+			entry.movie.type === 'tv' && entry.status !== 'completed' && entry.episode_progress
+				? entry.episode_progress
+				: null
+		]
+			.filter(Boolean)
+			.join(' · ')
+	);
 </script>
 
 <div class="bg-white border rounded-xl shadow overflow-hidden">
-	<div class="flex gap-4 p-4">
+	<!-- Main row: poster + content -->
+	<div class="flex gap-0">
 		<!-- Poster -->
-		{#if entry.movie.poster_url}
-			<img
-				src={entry.movie.poster_url}
-				alt={entry.movie.title}
-				class="w-16 h-auto rounded-lg object-cover shadow shrink-0"
-			/>
-		{:else}
-			<div
-				class="w-16 h-24 bg-gray-100 rounded-lg flex items-center justify-center text-gray-300 text-2xl shrink-0"
-			>
-				?
-			</div>
-		{/if}
+		<div class="shrink-0 w-24">
+			{#if entry.movie.poster_url}
+				<img
+					src={entry.movie.poster_url}
+					alt={entry.movie.title}
+					class="w-24 h-full object-cover"
+					style="min-height: 144px;"
+				/>
+			{:else}
+				<div
+					class="w-24 bg-gray-100 flex items-center justify-center text-gray-300 text-3xl"
+					style="min-height: 144px;"
+				>
+					?
+				</div>
+			{/if}
+		</div>
 
-		<div class="flex-1 min-w-0 space-y-2.5">
+		<!-- Content -->
+		<div class="flex-1 min-w-0 p-4 space-y-3">
 			<!-- Tittel + slett -->
 			<div class="flex items-start justify-between gap-2">
-				<div>
-					<p class="font-semibold leading-snug">{entry.movie.title}</p>
+				<div class="min-w-0">
+					<p class="font-semibold text-base leading-snug truncate">{entry.movie.title}</p>
 					<div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
-						<p class="text-xs text-gray-500">
-							{entry.movie.year ?? ''} · {entry.movie.type === 'tv' ? 'Serie' : 'Film'}
-							{#if entry.movie.type === 'tv' && entry.movie.seasons}
-								· {entry.movie.seasons} sesong{entry.movie.seasons !== 1 ? 'er' : ''}
-							{:else if entry.movie.type === 'movie' && entry.movie.runtime}
-								· {entry.movie.runtime} min
-							{/if}
-						</p>
+						<span class="text-xs text-gray-500">
+							{entry.movie.year ?? ''}{entry.movie.year ? ' · ' : ''}{entry.movie.type === 'tv' ? 'Serie' : 'Film'}{#if entry.movie.type === 'tv' && entry.movie.seasons}, {entry.movie.seasons}s{:else if entry.movie.type === 'movie' && entry.movie.runtime}, {entry.movie.runtime} min{/if}
+						</span>
 						{#if entry.movie.tmdb_rating}
-							<span class="text-xs text-yellow-600 font-medium">★ {entry.movie.tmdb_rating}</span>
+							<span class="text-xs text-yellow-500 font-medium">★ {entry.movie.tmdb_rating}</span>
 						{/if}
 					</div>
-					<!-- Sjangertagger -->
 					{#if entry.movie.genre}
-						<div class="flex flex-wrap gap-1 mt-1">
-							{#each entry.movie.genre.split(', ') as g}
-								<span class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{g}</span>
+						<div class="flex flex-wrap gap-1 mt-1.5">
+							{#each entry.movie.genre.split(', ').slice(0, 3) as g}
+								<span class="text-xs bg-purple-50 text-purple-500 px-2 py-0.5 rounded-full">{g}</span>
 							{/each}
 						</div>
 					{/if}
@@ -69,10 +83,11 @@
 					<input type="hidden" name="id" value={entry.id} />
 					<button
 						type="submit"
-						class="text-gray-300 hover:text-red-400 text-lg leading-none shrink-0"
+						class="text-gray-300 hover:text-red-400 text-lg leading-none shrink-0 mt-0.5"
 						onclick={(e: MouseEvent) => {
 							if (!confirm('Fjerne?')) e.preventDefault();
 						}}
+						aria-label="Fjern"
 					>×</button>
 				</form>
 			</div>
@@ -95,49 +110,9 @@
 				{/each}
 			</div>
 
-			<!-- Platform -->
-			<div>
-				<p class="text-xs text-gray-400 mb-1">Plattform</p>
-				<div class="flex flex-wrap gap-1.5">
-					{#each platforms as p}
-						{@const active = entry.platform === p}
-						<form method="POST" action="?/setPlatform" use:enhance>
-							<input type="hidden" name="id" value={entry.id} />
-							<input type="hidden" name="platform" value={active ? '' : p} />
-							<button
-								type="submit"
-								class="text-xs px-2.5 py-1 rounded-full transition {active
-									? 'bg-blue-600 text-white'
-									: 'bg-gray-50 text-gray-400 hover:bg-gray-100'}"
-							>
-								{p}
-							</button>
-						</form>
-					{/each}
-				</div>
-			</div>
-
-			<!-- Fremdrift (TV, ikke ferdig) -->
-			{#if entry.movie.type === 'tv' && entry.status !== 'completed'}
-				<div>
-					<p class="text-xs text-gray-400 mb-1">Fremdrift</p>
-					<form method="POST" action="?/setEpisodeProgress" use:enhance>
-						<input type="hidden" name="id" value={entry.id} />
-						<input
-							type="text"
-							name="episode_progress"
-							value={entry.episode_progress ?? ''}
-							placeholder="S01E01"
-							class="text-xs border rounded-lg px-2.5 py-1.5 w-28 focus:outline-none focus:ring-1 focus:ring-purple-400"
-							onblur={(e) => e.currentTarget.form?.requestSubmit()}
-						/>
-					</form>
-				</div>
-			{/if}
-
 			<!-- Hvem ser -->
 			<div>
-				<p class="text-xs text-gray-400 mb-1">Hvem ser</p>
+				<p class="text-xs text-gray-400 mb-1.5">Hvem ser</p>
 				<div class="flex flex-wrap gap-1.5">
 					{#each people as person}
 						{@const isViewer = entry.viewerIds.includes(person.id)}
@@ -158,45 +133,102 @@
 				</div>
 			</div>
 
-			<!-- Familievurdering -->
-			<div>
-				<p class="text-xs text-gray-400 mb-1">Familiens vurdering</p>
-				<div class="flex gap-0.5">
-					{#each [1, 2, 3, 4, 5] as star}
-						<form method="POST" action="?/setFamilyRating" use:enhance>
-							<input type="hidden" name="id" value={entry.id} />
-							<input
-								type="hidden"
-								name="rating"
-								value={entry.family_rating === star ? 0 : star}
-							/>
-							<button
-								type="submit"
-								class="text-xl leading-none transition {star <= (entry.family_rating ?? 0)
-									? 'text-yellow-400 hover:text-yellow-300'
-									: 'text-gray-200 hover:text-yellow-300'}"
-							>
-								★
-							</button>
-						</form>
-					{/each}
-				</div>
+			<!-- Innstillinger toggle -->
+			<div class="border-t pt-2">
+				<button
+					onclick={() => (showSettings = !showSettings)}
+					class="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition"
+				>
+					<span>{showSettings ? '▾' : '▸'} Innstillinger</span>
+					{#if !showSettings && settingsSummary}
+						<span class="text-gray-500 font-medium">{settingsSummary}</span>
+					{/if}
+				</button>
+
+				{#if showSettings}
+					<div class="mt-3 space-y-3">
+						<!-- Platform -->
+						<div>
+							<p class="text-xs text-gray-400 mb-1.5">Plattform</p>
+							<div class="flex flex-wrap gap-1.5">
+								{#each platforms as p}
+									{@const active = entry.platform === p}
+									<form method="POST" action="?/setPlatform" use:enhance>
+										<input type="hidden" name="id" value={entry.id} />
+										<input type="hidden" name="platform" value={active ? '' : p} />
+										<button
+											type="submit"
+											class="text-xs px-2.5 py-1 rounded-full transition {active
+												? 'bg-blue-600 text-white'
+												: 'bg-gray-50 text-gray-400 hover:bg-gray-100'}"
+										>
+											{p}
+										</button>
+									</form>
+								{/each}
+							</div>
+						</div>
+
+						<!-- Fremdrift (TV, ikke ferdig) -->
+						{#if entry.movie.type === 'tv' && entry.status !== 'completed'}
+							<div>
+								<p class="text-xs text-gray-400 mb-1.5">Fremdrift</p>
+								<form method="POST" action="?/setEpisodeProgress" use:enhance>
+									<input type="hidden" name="id" value={entry.id} />
+									<input
+										type="text"
+										name="episode_progress"
+										value={entry.episode_progress ?? ''}
+										placeholder="S01E01"
+										class="text-xs border rounded-lg px-2.5 py-1.5 w-28 focus:outline-none focus:ring-1 focus:ring-purple-400"
+										onblur={(e) => e.currentTarget.form?.requestSubmit()}
+									/>
+								</form>
+							</div>
+						{/if}
+
+						<!-- Familievurdering -->
+						<div>
+							<p class="text-xs text-gray-400 mb-1.5">Familiens vurdering</p>
+							<div class="flex gap-0.5">
+								{#each [1, 2, 3, 4, 5] as star}
+									<form method="POST" action="?/setFamilyRating" use:enhance>
+										<input type="hidden" name="id" value={entry.id} />
+										<input
+											type="hidden"
+											name="rating"
+											value={entry.family_rating === star ? 0 : star}
+										/>
+										<button
+											type="submit"
+											class="text-xl leading-none transition {star <= (entry.family_rating ?? 0)
+												? 'text-yellow-400 hover:text-yellow-300'
+												: 'text-gray-200 hover:text-yellow-300'}"
+										>
+											★
+										</button>
+									</form>
+								{/each}
+							</div>
+						</div>
+
+						<!-- Datoer -->
+						{#if entry.started_at || entry.completed_at}
+							<div class="flex gap-4 text-xs text-gray-400">
+								{#if entry.started_at}
+									<span>Startet: {formatDate(entry.started_at)}</span>
+								{/if}
+								{#if entry.completed_at}
+									<span>Ferdig: {formatDate(entry.completed_at)}</span>
+								{/if}
+							</div>
+						{/if}
+					</div>
+				{/if}
 			</div>
 
-			<!-- Datoer -->
-			{#if entry.started_at || entry.completed_at}
-				<div class="flex gap-4 text-xs text-gray-400">
-					{#if entry.started_at}
-						<span>Startet: {formatDate(entry.started_at)}</span>
-					{/if}
-					{#if entry.completed_at}
-						<span>Ferdig: {formatDate(entry.completed_at)}</span>
-					{/if}
-				</div>
-			{/if}
-
 			<!-- Seanselogg -->
-			<div class="border-t pt-2 mt-1">
+			<div class="border-t pt-2">
 				<div class="flex items-center gap-3">
 					{#if entry.watchLogs.length > 0}
 						<button
