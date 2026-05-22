@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { page } from '$app/stores';
 
 	let { form } = $props();
 	let showReset = $state(false);
+
+	const urlError = $derived($page.url.searchParams.get('error'));
 </script>
 
 <div class="min-h-screen flex items-center justify-center bg-gray-50">
@@ -51,8 +54,8 @@
 			</button>
 		{:else}
 			<!-- Innlogging -->
-			{#if form?.error}
-				<p class="text-red-600 text-sm text-center">{form.error}</p>
+			{#if form?.error || urlError}
+				<p class="text-red-600 text-sm text-center">{form?.error ?? urlError}</p>
 			{/if}
 
 			<form method="POST" action="?/login" use:enhance class="space-y-4">
