@@ -11,6 +11,19 @@ export type Movie = {
 	year: string | null;
 	poster_url: string | null;
 	overview: string | null;
+	genre: string | null;
+	runtime: number | null;
+	tmdb_rating: number | null;
+	seasons: number | null;
+	original_language: string | null;
+};
+
+export type WatchLogEntry = {
+	id: string;
+	watchlist_id: string;
+	watched_at: string;
+	notes: string | null;
+	viewerIds: string[];
 };
 
 export type VotingSession = {
