@@ -1,7 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import { goto, invalidate } from '$app/navigation';
-	import { createBrowserClient, isBrowser } from '@supabase/ssr';
+	import { createBrowserClient } from '@supabase/ssr';
 	import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 	import { onMount } from 'svelte';
 
@@ -10,9 +10,7 @@
 	const supabase = createBrowserClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY);
 
 	onMount(() => {
-		const {
-			data: { subscription }
-		} = supabase.auth.onAuthStateChange((_, session) => {
+		const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
 			if (session?.expires_at !== data.session?.expires_at) {
 				invalidate('supabase:auth');
 			}
@@ -29,9 +27,8 @@
 {#if data.session}
 	<header class="bg-purple-700 text-white px-4 py-3 flex items-center justify-between shadow">
 		<a href="/" class="text-lg font-bold tracking-tight">🎬 Filmkveld</a>
-		<nav class="flex items-center gap-3 sm:gap-5 text-sm">
-			<a href="/watching" class="hover:underline">Who's watching?</a>
-			<a href="/admin" class="hover:underline">Filmkveld</a>
+		<nav class="flex items-center gap-4 text-sm">
+			<a href="/watching" class="hover:underline">Vi ser på</a>
 			<a href="/admin/people" class="hover:underline hidden sm:inline">Deltakere</a>
 			<button onclick={signOut} class="hover:underline opacity-75">Logg ut</button>
 		</nav>

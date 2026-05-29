@@ -62,7 +62,7 @@
 
 <div class="max-w-3xl mx-auto p-6 space-y-6">
 	<div class="flex items-center justify-between">
-		<h1 class="text-2xl font-bold text-gray-800">Who's watching?</h1>
+		<h1 class="text-2xl font-bold text-gray-800">Vi ser på</h1>
 		<button
 			onclick={() => (showSearch = !showSearch)}
 			class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-sm font-medium"
