@@ -7,6 +7,13 @@
 	let title = $state('');
 	let date = $state('');
 	let votes_per_person = $state(5);
+
+	const statusConfig: Record<string, { label: string; color: string }> = {
+		suggestion: { label: '📋 Forslag',        color: 'bg-blue-100 text-blue-700' },
+		voting:     { label: '🗳️ Stemming åpen',  color: 'bg-green-100 text-green-700' },
+		decided:    { label: '🏆 Bestemt',         color: 'bg-yellow-100 text-yellow-700' },
+		archived:   { label: '📦 Arkivert',        color: 'bg-gray-100 text-gray-500' }
+	};
 </script>
 
 <div class="max-w-3xl mx-auto p-6 space-y-10">
@@ -14,7 +21,7 @@
 
 	<!-- Ny avstemning -->
 	<section class="bg-white border rounded-xl p-6 shadow space-y-4">
-		<h2 class="text-lg font-semibold">Opprett ny avstemning</h2>
+		<h2 class="text-lg font-semibold">Opprett ny filmkveld</h2>
 		{#if form?.error}
 			<p class="text-red-600 text-sm">{form.error}</p>
 		{/if}
@@ -55,54 +62,78 @@
 		</form>
 	</section>
 
-	<!-- Liste over avstemninger -->
+	<!-- Liste over filmkvelder -->
 	<section class="bg-white border rounded-xl p-6 shadow space-y-3">
-		<h2 class="text-lg font-semibold">Alle avstemninger</h2>
+		<h2 class="text-lg font-semibold">Alle filmkvelder</h2>
 
 		{#if data.sessions.length === 0}
-			<p class="text-gray-500 italic text-sm">Ingen avstemninger ennå.</p>
+			<p class="text-gray-500 italic text-sm">Ingen filmkvelder ennå.</p>
 		{/if}
 
 		{#each data.sessions as s}
-			<div class="flex items-center justify-between border rounded-xl p-3 hover:bg-gray-50">
-				<div>
-					<p class="font-medium">{s.title}</p>
-					<p class="text-xs text-gray-500">
-						{s.date ?? ''}
-						{s.status === 'open' ? '· Åpen' : '· Avsluttet'}
-					</p>
+			{@const cfg = statusConfig[s.status] ?? statusConfig.archived}
+			<div class="border rounded-xl p-4 hover:bg-gray-50 space-y-3">
+				<!-- Tittel + status -->
+				<div class="flex items-start justify-between gap-3">
+					<div>
+						<p class="font-medium">{s.title}</p>
+						{#if s.date}
+							<p class="text-xs text-gray-500 mt-0.5">{s.date}</p>
+						{/if}
+					</div>
+					<span class="text-xs font-medium px-2.5 py-1 rounded-full shrink-0 {cfg.color}">{cfg.label}</span>
 				</div>
-				<div class="flex gap-2 text-sm">
-					<button
-						onclick={() => goto(`/admin/sessions/${s.id}`)}
-						class="text-blue-600 hover:underline"
-					>
+
+				<!-- Handlinger per tilstand -->
+				<div class="flex flex-wrap gap-2 text-sm">
+					<button onclick={() => goto(`/admin/sessions/${s.id}`)} class="text-blue-600 hover:underline">
 						Rediger
 					</button>
-					<button
-						onclick={() => goto(`/vote/${s.id}`)}
-						class="text-purple-600 hover:underline"
-					>
-						Stem
-					</button>
-					{#if s.status === 'open'}
-						<form method="POST" action="?/closeSession" use:enhance>
+
+					{#if s.status === 'suggestion'}
+						<form method="POST" action="?/openVoting" use:enhance>
 							<input type="hidden" name="id" value={s.id} />
-							<button type="submit" class="text-orange-600 hover:underline">Avslutt</button>
+							<button type="submit" class="text-green-600 hover:underline font-medium">
+								Åpne for stemming →
+							</button>
 						</form>
-					{:else}
-						<button
-							onclick={() => goto(`/results/${s.id}`)}
-							class="text-gray-600 hover:underline"
-						>
+
+					{:else if s.status === 'voting'}
+						<button onclick={() => goto(`/vote/${s.id}`)} class="text-purple-600 hover:underline">
+							Stem
+						</button>
+						<button onclick={() => goto(`/results/${s.id}`)} class="text-gray-600 hover:underline">
+							Live resultater
+						</button>
+						<form method="POST" action="?/closeVoting" use:enhance>
+							<input type="hidden" name="id" value={s.id} />
+							<button type="submit" class="text-orange-600 hover:underline">
+								Avslutt stemming
+							</button>
+						</form>
+
+					{:else if s.status === 'decided'}
+						<button onclick={() => goto(`/results/${s.id}`)} class="text-yellow-700 hover:underline font-medium">
+							Se resultat
+						</button>
+						<form method="POST" action="?/archiveSession" use:enhance>
+							<input type="hidden" name="id" value={s.id} />
+							<button type="submit" class="text-gray-500 hover:underline">
+								Arkiver
+							</button>
+						</form>
+
+					{:else if s.status === 'archived'}
+						<button onclick={() => goto(`/results/${s.id}`)} class="text-gray-500 hover:underline">
 							Resultater
 						</button>
 					{/if}
+
 					<form method="POST" action="?/deleteSession" use:enhance>
 						<input type="hidden" name="id" value={s.id} />
 						<button
 							type="submit"
-							class="text-red-600 hover:underline"
+							class="text-red-500 hover:underline"
 							onclick={(e) => { if (!confirm('Sikker?')) e.preventDefault(); }}
 						>
 							Slett

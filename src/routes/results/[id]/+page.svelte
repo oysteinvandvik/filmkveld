@@ -2,41 +2,82 @@
 	let { data } = $props();
 
 	const maxPoints = $derived(Math.max(...data.ranked.map((c: any) => c.totalPoints), 1));
+	const isDecided = $derived(data.votingSession.status === 'decided' || data.votingSession.status === 'archived');
+
+	// Uavgjort: de to øverste har samme poeng (og minst én har stemt)
+	const isUndecided = $derived(
+		isDecided &&
+		data.ranked.length >= 2 &&
+		data.ranked[0].totalPoints > 0 &&
+		data.ranked[0].totalPoints === data.ranked[1].totalPoints
+	);
+
+	const winner = $derived(isDecided && !isUndecided && data.ranked[0]?.totalPoints > 0 ? data.ranked[0] : null);
 </script>
 
 <div class="max-w-2xl mx-auto p-6 space-y-6">
+	<!-- Tittel -->
 	<div class="text-center space-y-1">
 		<h1 class="text-2xl font-bold text-gray-800">{data.votingSession.title}</h1>
 		{#if data.votingSession.date}
 			<p class="text-gray-500 text-sm">{data.votingSession.date}</p>
 		{/if}
-		<p class="text-sm text-gray-500">
-			{data.voterCount} av {data.participantCount} har stemt
-		</p>
+		{#if !isDecided}
+			<p class="text-sm text-gray-500">{data.voterCount} av {data.participantCount} har stemt</p>
+		{/if}
 	</div>
 
+	<!-- Vinner-banner (kun i decided/archived) -->
+	{#if isDecided}
+		{#if isUndecided}
+			<div class="bg-orange-50 border border-orange-200 rounded-2xl p-5 text-center space-y-1">
+				<p class="text-3xl">🤝</p>
+				<p class="text-lg font-bold text-orange-700">Uavgjort!</p>
+				<p class="text-sm text-orange-600">
+					{data.ranked[0].movie.title} og {data.ranked[1].movie.title} fikk like mange poeng
+				</p>
+			</div>
+		{:else if winner}
+			<div class="bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-5 flex gap-4 items-center">
+				{#if winner.movie.poster_url}
+					<img src={winner.movie.poster_url} alt={winner.movie.title} class="w-20 h-auto rounded-xl shadow object-cover shrink-0" />
+				{/if}
+				<div>
+					<p class="text-xs font-medium text-yellow-600 uppercase tracking-wide mb-0.5">Vi ser på</p>
+					<p class="text-xl font-bold text-gray-800">{winner.movie.title}</p>
+					<p class="text-sm text-gray-500 mt-0.5">{winner.movie.year ?? ''} · {winner.movie.type === 'tv' ? 'Serie' : 'Film'}</p>
+					<p class="text-yellow-600 font-semibold mt-1">🏆 {winner.totalPoints} poeng</p>
+				</div>
+			</div>
+		{/if}
+	{/if}
+
+	<!-- Rankingliste -->
 	{#if data.ranked.length === 0}
 		<p class="text-center text-gray-400 italic">Ingen kandidater.</p>
 	{/if}
 
 	{#each data.ranked as candidate, i}
-		<div class="bg-white border rounded-xl shadow p-4 flex gap-4 {i === 0 && candidate.totalPoints > 0 ? 'border-yellow-300 bg-yellow-50' : ''}">
-			<div class="flex-shrink-0 w-8 text-center">
-				{#if i === 0 && candidate.totalPoints > 0}
+		{@const isWinner = isDecided && !isUndecided && i === 0 && candidate.totalPoints > 0}
+		{@const isTied = isUndecided && i <= 1 && candidate.totalPoints > 0}
+
+		<div class="bg-white border rounded-xl shadow p-4 flex gap-4
+			{isWinner ? 'border-yellow-300 bg-yellow-50' : ''}
+			{isTied ? 'border-orange-200 bg-orange-50' : ''}">
+			<div class="flex-shrink-0 w-8 text-center pt-1">
+				{#if isWinner}
 					<span class="text-2xl">🏆</span>
+				{:else if isTied}
+					<span class="text-2xl">🤝</span>
 				{:else}
 					<span class="text-gray-400 font-bold">{i + 1}</span>
 				{/if}
 			</div>
 
 			{#if candidate.movie.poster_url}
-				<img
-					src={candidate.movie.poster_url}
-					alt={candidate.movie.title}
-					class="w-16 h-auto rounded-lg shadow object-cover"
-				/>
+				<img src={candidate.movie.poster_url} alt={candidate.movie.title} class="w-16 h-auto rounded-lg shadow object-cover" />
 			{:else}
-				<div class="w-16 h-22 bg-gray-100 rounded-lg flex items-center justify-center text-gray-300 text-2xl">?</div>
+				<div class="w-16 h-24 bg-gray-100 rounded-lg flex items-center justify-center text-gray-300 text-2xl">?</div>
 			{/if}
 
 			<div class="flex-1 space-y-2 min-w-0">
@@ -45,13 +86,13 @@
 						<p class="font-semibold">{candidate.movie.title}</p>
 						<p class="text-xs text-gray-500">{candidate.movie.year ?? ''} · {candidate.movie.type === 'tv' ? 'Serie' : 'Film'}</p>
 					</div>
-					<span class="text-purple-700 font-bold text-lg whitespace-nowrap">{candidate.totalPoints}p</span>
+					<span class="font-bold text-lg whitespace-nowrap {isWinner ? 'text-yellow-600' : isTied ? 'text-orange-600' : 'text-purple-700'}">
+						{candidate.totalPoints}p
+					</span>
 				</div>
-
-				<!-- Visual bar -->
 				<div class="h-2 bg-gray-100 rounded-full overflow-hidden">
 					<div
-						class="h-full rounded-full transition-all duration-500 {i === 0 && candidate.totalPoints > 0 ? 'bg-yellow-400' : 'bg-purple-400'}"
+						class="h-full rounded-full transition-all duration-500 {isWinner ? 'bg-yellow-400' : isTied ? 'bg-orange-400' : 'bg-purple-400'}"
 						style="width: {candidate.totalPoints > 0 ? (candidate.totalPoints / maxPoints) * 100 : 0}%"
 					></div>
 				</div>

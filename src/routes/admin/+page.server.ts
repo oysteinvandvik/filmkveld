@@ -19,7 +19,7 @@ export const actions: Actions = {
 
 		const form = await request.formData();
 		const title = form.get('title') as string;
-		const date = form.get('date') as string || null;
+		const date = (form.get('date') as string) || null;
 		const votes_per_person = Number(form.get('votes_per_person')) || 5;
 
 		if (!title) return fail(400, { error: 'Tittel er påkrevd' });
@@ -34,21 +34,35 @@ export const actions: Actions = {
 		redirect(303, `/admin/sessions/${data.id}`);
 	},
 
-	closeSession: async ({ request, locals: { supabase, safeGetSession } }) => {
+	// suggestion → voting
+	openVoting: async ({ request, locals: { supabase, safeGetSession } }) => {
 		await requireAuth(safeGetSession);
-
 		const form = await request.formData();
 		const id = form.get('id') as string;
+		await supabase.from('voting_sessions').update({ status: 'voting' }).eq('id', id);
+	},
 
+	// voting → decided
+	closeVoting: async ({ request, locals: { supabase, safeGetSession } }) => {
+		await requireAuth(safeGetSession);
+		const form = await request.formData();
+		const id = form.get('id') as string;
 		await supabase
 			.from('voting_sessions')
-			.update({ status: 'closed', closed_at: new Date().toISOString() })
+			.update({ status: 'decided', closed_at: new Date().toISOString() })
 			.eq('id', id);
+	},
+
+	// decided → archived
+	archiveSession: async ({ request, locals: { supabase, safeGetSession } }) => {
+		await requireAuth(safeGetSession);
+		const form = await request.formData();
+		const id = form.get('id') as string;
+		await supabase.from('voting_sessions').update({ status: 'archived' }).eq('id', id);
 	},
 
 	deleteSession: async ({ request, locals: { supabase, safeGetSession } }) => {
 		await requireAuth(safeGetSession);
-
 		const form = await request.formData();
 		const id = form.get('id') as string;
 		await supabase.from('voting_sessions').delete().eq('id', id);

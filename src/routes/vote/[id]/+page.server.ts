@@ -46,8 +46,8 @@ export const actions: Actions = {
 			.eq('id', params.id)
 			.single();
 
-		if (!votingSession || votingSession.status !== 'open') {
-			return fail(400, { error: 'Avstemningen er avsluttet' });
+		if (!votingSession || votingSession.status !== 'voting') {
+			return fail(400, { error: 'Avstemningen er ikke åpen for stemming' });
 		}
 
 		// Parse votes: candidateId -> points

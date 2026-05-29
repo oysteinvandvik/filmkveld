@@ -93,9 +93,15 @@
 		{/if}
 	</div>
 
-	{#if data.votingSession.status === 'closed'}
-		<p class="text-center text-orange-600 font-medium">Denne avstemningen er avsluttet.</p>
-		<div class="text-center">
+	{#if data.votingSession.status === 'suggestion'}
+		<div class="text-center space-y-2 py-6">
+			<p class="text-2xl">🎬</p>
+			<p class="text-gray-600 font-medium">Stemming er ikke åpnet ennå</p>
+			<p class="text-gray-400 text-sm">Kandidatene settes opp — sjekk tilbake snart</p>
+		</div>
+	{:else if data.votingSession.status === 'decided' || data.votingSession.status === 'archived'}
+		<div class="text-center space-y-3 py-4">
+			<p class="text-orange-600 font-medium">Denne avstemningen er avsluttet.</p>
 			<a href="/results/{data.votingSession.id}" class="text-purple-600 hover:underline">Se resultater →</a>
 		</div>
 	{:else}
