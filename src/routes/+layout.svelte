@@ -27,12 +27,12 @@
 </script>
 
 {#if data.session}
-	<header class="bg-purple-700 text-white px-6 py-3 flex items-center justify-between shadow">
+	<header class="bg-purple-700 text-white px-4 py-3 flex items-center justify-between shadow">
 		<a href="/" class="text-lg font-bold tracking-tight">🎬 Filmkveld</a>
-		<nav class="flex items-center gap-4 text-sm">
-			<a href="/watching" class="hover:underline">Vi ser på</a>
+		<nav class="flex items-center gap-3 sm:gap-5 text-sm">
+			<a href="/watching" class="hover:underline">Ser på</a>
 			<a href="/admin" class="hover:underline">Admin</a>
-			<a href="/admin/people" class="hover:underline">Deltakere</a>
+			<a href="/admin/people" class="hover:underline hidden sm:inline">Deltakere</a>
 			<button onclick={signOut} class="hover:underline opacity-75">Logg ut</button>
 		</nav>
 	</header>
