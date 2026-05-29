@@ -6,7 +6,9 @@
 	const suggestion = $derived(data.sessions.filter((s: any) => s.status === 'suggestion'));
 	const voting     = $derived(data.sessions.filter((s: any) => s.status === 'voting'));
 	const decided    = $derived(data.sessions.filter((s: any) => s.status === 'decided'));
-	// archived vises ikke på forsiden
+	const archived   = $derived(data.sessions.filter((s: any) => s.status === 'archived'));
+
+	let showArchived = $state(false);
 </script>
 
 <div class="max-w-2xl mx-auto p-6 space-y-8">
@@ -80,5 +82,37 @@
 				</button>
 			{/each}
 		</section>
+	{/if}
+
+	<!-- Arkiv -->
+	{#if archived.length > 0}
+		<div class="text-center pt-2">
+			<button
+				onclick={() => (showArchived = !showArchived)}
+				class="text-sm text-gray-400 hover:text-gray-600"
+			>
+				{showArchived ? '▾' : '▸'} Arkiv ({archived.length})
+			</button>
+		</div>
+		{#if showArchived}
+			<section class="space-y-2">
+				{#each archived as session}
+					<button
+						onclick={() => goto(`/results/${session.id}`)}
+						class="w-full text-left bg-white border rounded-xl p-3 hover:bg-gray-50 transition opacity-60"
+					>
+						<div class="flex justify-between items-center">
+							<div>
+								<p class="text-sm font-medium text-gray-600">{session.title}</p>
+								{#if session.date}
+									<p class="text-xs text-gray-400">{session.date}</p>
+								{/if}
+							</div>
+							<span class="text-xs text-gray-400">📦</span>
+						</div>
+					</button>
+				{/each}
+			</section>
+		{/if}
 	{/if}
 </div>

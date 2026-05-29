@@ -28,7 +28,7 @@ export type WatchLogEntry = {
 
 export type WatchlistEntry = {
 	id: string;
-	status: 'watching' | 'completed' | 'paused';
+	status: 'watching' | 'completed' | 'paused' | 'archived';
 	notes: string | null;
 	platform: string | null;
 	started_at: string | null;
@@ -44,7 +44,7 @@ export type VotingSession = {
 	id: string;
 	title: string;
 	date: string | null;
-	status: 'open' | 'closed';
+	status: 'suggestion' | 'voting' | 'decided' | 'archived';
 	votes_per_person: number;
 	created_at: string;
 };

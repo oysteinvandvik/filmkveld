@@ -13,7 +13,7 @@
 	// Filter-state
 	let selectedPeopleIds = $state<string[]>([]);
 	let selectedType = $state<string | null>(null);
-	let selectedStatus = $state<'watching' | 'paused' | 'completed' | 'all'>('watching');
+	let selectedStatus = $state<'watching' | 'paused' | 'completed' | 'archived' | 'all'>('watching');
 
 	function togglePerson(id: string) {
 		selectedPeopleIds = selectedPeopleIds.includes(id)
@@ -21,10 +21,11 @@
 			: [...selectedPeopleIds, id];
 	}
 
-	const statusOptions: { value: 'watching' | 'paused' | 'completed' | 'all'; label: string }[] = [
+	const statusOptions: { value: 'watching' | 'paused' | 'completed' | 'archived' | 'all'; label: string }[] = [
 		{ value: 'watching', label: '▶ Ser nå' },
 		{ value: 'paused', label: '⏸ Pause' },
 		{ value: 'completed', label: '✓ Ferdig' },
+		{ value: 'archived', label: '📦 Arkivert' },
 		{ value: 'all', label: 'Alle' }
 	];
 
@@ -43,6 +44,7 @@
 	const watching = $derived(filtered.filter((e) => e.status === 'watching'));
 	const paused = $derived(filtered.filter((e) => e.status === 'paused'));
 	const completed = $derived(filtered.filter((e) => e.status === 'completed'));
+	const archivedEntries = $derived(filtered.filter((e) => e.status === 'archived'));
 
 	// Nullstill-knappen er aktiv hvis noe avviker fra default
 	const hasActiveFilter = $derived(
@@ -53,7 +55,8 @@
 	const counts = $derived({
 		watching: (data.watchlist as WatchlistEntry[]).filter((e) => e.status === 'watching').length,
 		paused: (data.watchlist as WatchlistEntry[]).filter((e) => e.status === 'paused').length,
-		completed: (data.watchlist as WatchlistEntry[]).filter((e) => e.status === 'completed').length
+		completed: (data.watchlist as WatchlistEntry[]).filter((e) => e.status === 'completed').length,
+		archived: (data.watchlist as WatchlistEntry[]).filter((e) => e.status === 'archived').length
 	});
 </script>
 
@@ -259,6 +262,14 @@
 			<section class="space-y-3">
 				<h2 class="text-base font-semibold text-gray-700">✓ Ferdig</h2>
 				{#each completed as entry}
+					<WatchEntry {entry} people={data.people} />
+				{/each}
+			</section>
+		{/if}
+		{#if archivedEntries.length > 0}
+			<section class="space-y-3">
+				<h2 class="text-base font-semibold text-gray-500">📦 Arkivert</h2>
+				{#each archivedEntries as entry}
 					<WatchEntry {entry} people={data.people} />
 				{/each}
 			</section>

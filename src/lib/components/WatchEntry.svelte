@@ -94,7 +94,7 @@
 
 			<!-- Status -->
 			<div class="flex gap-1.5 flex-wrap">
-				{#each ['watching', 'paused', 'completed'] as s}
+				{#each ['watching', 'paused', 'completed', 'archived'] as s}
 					<form method="POST" action="?/setStatus" use:enhance>
 						<input type="hidden" name="id" value={entry.id} />
 						<input type="hidden" name="status" value={s} />

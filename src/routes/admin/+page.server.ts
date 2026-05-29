@@ -42,6 +42,14 @@ export const actions: Actions = {
 		await supabase.from('voting_sessions').update({ status: 'voting' }).eq('id', id);
 	},
 
+	// voting → suggestion
+	backToSuggestion: async ({ request, locals: { supabase, safeGetSession } }) => {
+		await requireAuth(safeGetSession);
+		const form = await request.formData();
+		const id = form.get('id') as string;
+		await supabase.from('voting_sessions').update({ status: 'suggestion' }).eq('id', id);
+	},
+
 	// voting → decided
 	closeVoting: async ({ request, locals: { supabase, safeGetSession } }) => {
 		await requireAuth(safeGetSession);
@@ -53,12 +61,31 @@ export const actions: Actions = {
 			.eq('id', id);
 	},
 
+	// decided → voting
+	reopenVoting: async ({ request, locals: { supabase, safeGetSession } }) => {
+		await requireAuth(safeGetSession);
+		const form = await request.formData();
+		const id = form.get('id') as string;
+		await supabase
+			.from('voting_sessions')
+			.update({ status: 'voting', closed_at: null })
+			.eq('id', id);
+	},
+
 	// decided → archived
 	archiveSession: async ({ request, locals: { supabase, safeGetSession } }) => {
 		await requireAuth(safeGetSession);
 		const form = await request.formData();
 		const id = form.get('id') as string;
 		await supabase.from('voting_sessions').update({ status: 'archived' }).eq('id', id);
+	},
+
+	// archived → decided
+	unarchiveSession: async ({ request, locals: { supabase, safeGetSession } }) => {
+		await requireAuth(safeGetSession);
+		const form = await request.formData();
+		const id = form.get('id') as string;
+		await supabase.from('voting_sessions').update({ status: 'decided' }).eq('id', id);
 	},
 
 	deleteSession: async ({ request, locals: { supabase, safeGetSession } }) => {

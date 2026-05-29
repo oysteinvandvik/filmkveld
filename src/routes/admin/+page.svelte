@@ -85,7 +85,7 @@
 				</div>
 
 				<!-- Handlinger per tilstand -->
-				<div class="flex flex-wrap gap-2 text-sm">
+				<div class="flex flex-wrap gap-2 text-sm items-center">
 					<button onclick={() => goto(`/admin/sessions/${s.id}`)} class="text-blue-600 hover:underline">
 						Rediger
 					</button>
@@ -94,46 +94,46 @@
 						<form method="POST" action="?/openVoting" use:enhance>
 							<input type="hidden" name="id" value={s.id} />
 							<button type="submit" class="text-green-600 hover:underline font-medium">
-								Åpne for stemming →
+								→ Åpne stemming
 							</button>
 						</form>
 
 					{:else if s.status === 'voting'}
-						<button onclick={() => goto(`/vote/${s.id}`)} class="text-purple-600 hover:underline">
-							Stem
-						</button>
-						<button onclick={() => goto(`/results/${s.id}`)} class="text-gray-600 hover:underline">
-							Live resultater
-						</button>
+						<form method="POST" action="?/backToSuggestion" use:enhance>
+							<input type="hidden" name="id" value={s.id} />
+							<button type="submit" class="text-gray-400 hover:underline">← Forslag</button>
+						</form>
+						<button onclick={() => goto(`/vote/${s.id}`)} class="text-purple-600 hover:underline">Stem</button>
+						<button onclick={() => goto(`/results/${s.id}`)} class="text-gray-600 hover:underline">Live</button>
 						<form method="POST" action="?/closeVoting" use:enhance>
 							<input type="hidden" name="id" value={s.id} />
-							<button type="submit" class="text-orange-600 hover:underline">
-								Avslutt stemming
-							</button>
+							<button type="submit" class="text-orange-600 hover:underline font-medium">→ Avslutt</button>
 						</form>
 
 					{:else if s.status === 'decided'}
-						<button onclick={() => goto(`/results/${s.id}`)} class="text-yellow-700 hover:underline font-medium">
-							Se resultat
-						</button>
+						<form method="POST" action="?/reopenVoting" use:enhance>
+							<input type="hidden" name="id" value={s.id} />
+							<button type="submit" class="text-gray-400 hover:underline">← Gjenåpne</button>
+						</form>
+						<button onclick={() => goto(`/results/${s.id}`)} class="text-yellow-700 hover:underline font-medium">Resultat</button>
 						<form method="POST" action="?/archiveSession" use:enhance>
 							<input type="hidden" name="id" value={s.id} />
-							<button type="submit" class="text-gray-500 hover:underline">
-								Arkiver
-							</button>
+							<button type="submit" class="text-gray-500 hover:underline">→ Arkiver</button>
 						</form>
 
 					{:else if s.status === 'archived'}
-						<button onclick={() => goto(`/results/${s.id}`)} class="text-gray-500 hover:underline">
-							Resultater
-						</button>
+						<form method="POST" action="?/unarchiveSession" use:enhance>
+							<input type="hidden" name="id" value={s.id} />
+							<button type="submit" class="text-gray-400 hover:underline">← Hent opp</button>
+						</form>
+						<button onclick={() => goto(`/results/${s.id}`)} class="text-gray-500 hover:underline">Resultater</button>
 					{/if}
 
 					<form method="POST" action="?/deleteSession" use:enhance>
 						<input type="hidden" name="id" value={s.id} />
 						<button
 							type="submit"
-							class="text-red-500 hover:underline"
+							class="text-red-400 hover:underline"
 							onclick={(e) => { if (!confirm('Sikker?')) e.preventDefault(); }}
 						>
 							Slett
