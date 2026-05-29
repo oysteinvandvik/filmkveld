@@ -17,7 +17,7 @@
 </script>
 
 <div class="max-w-3xl mx-auto p-6 space-y-10">
-	<h1 class="text-2xl font-bold text-gray-800">Admin</h1>
+	<h1 class="text-2xl font-bold text-gray-800">Filmkveld</h1>
 
 	<!-- Ny avstemning -->
 	<section class="bg-white border rounded-xl p-6 shadow space-y-4">

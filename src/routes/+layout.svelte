@@ -30,8 +30,8 @@
 	<header class="bg-purple-700 text-white px-4 py-3 flex items-center justify-between shadow">
 		<a href="/" class="text-lg font-bold tracking-tight">🎬 Filmkveld</a>
 		<nav class="flex items-center gap-3 sm:gap-5 text-sm">
-			<a href="/watching" class="hover:underline">Ser på</a>
-			<a href="/admin" class="hover:underline">Admin</a>
+			<a href="/watching" class="hover:underline">Who's watching?</a>
+			<a href="/admin" class="hover:underline">Filmkveld</a>
 			<a href="/admin/people" class="hover:underline hidden sm:inline">Deltakere</a>
 			<button onclick={signOut} class="hover:underline opacity-75">Logg ut</button>
 		</nav>
