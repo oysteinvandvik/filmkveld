@@ -4,8 +4,11 @@ export const platforms = [
 	'Viaplay',
 	'Disney+',
 	'Apple TV+',
-	'Kino',
-	'Hjemme'
+	'Paramount+',
+	'SkyShowtime',
+	'NRK',
+	'TV 2 Play',
+	'Kino'
 ] as const;
 
 export const statusLabel: Record<string, string> = {
