@@ -1,4 +1,6 @@
 test-results
+playwright-report
+e2e/.auth
 node_modules
 
 # Output
@@ -17,7 +19,7 @@ Thumbs.db
 .env
 .env.*
 !.env.example
-!.env.test
+!.env.test.example
 
 # Vite
 vite.config.js.timestamp-*

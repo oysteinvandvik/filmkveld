@@ -5,6 +5,9 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
+	server: {
+		port: process.env.PORT ? parseInt(process.env.PORT) : 5173
+	},
 	test: {
 		workspace: [
 			{
