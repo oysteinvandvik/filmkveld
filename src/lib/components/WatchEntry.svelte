@@ -37,22 +37,22 @@
 
 <div class="bg-white border rounded-xl shadow overflow-hidden">
 	<!-- Øverste seksjon: poster + info -->
-	<div class="flex items-stretch">
-		<!-- Poster fyller full høyde -->
-		<div class="shrink-0 w-24 bg-gray-100 flex items-center justify-center">
+	<div class="flex gap-0 items-center">
+		<!-- Poster: fast 2:3 (96×144px) -->
+		<div class="shrink-0 w-32 flex justify-center py-3">
 			{#if entry.movie.poster_url}
 				<img
 					src={entry.movie.poster_url}
 					alt={entry.movie.title}
-					class="w-full h-full object-cover"
+					class="w-24 h-36 object-cover rounded-xl"
 				/>
 			{:else}
-				<span class="text-gray-300 text-3xl">?</span>
+				<div class="w-24 h-36 bg-gray-100 rounded-xl flex items-center justify-center text-gray-300 text-2xl">?</div>
 			{/if}
 		</div>
 
 		<!-- Info -->
-		<div class="flex-1 min-w-0 p-4">
+		<div class="flex-1 min-w-0 py-4 pr-4">
 			<!-- Tittel + slett -->
 			<div class="flex items-start justify-between gap-2">
 				<div class="min-w-0">
