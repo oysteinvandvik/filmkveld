@@ -32,7 +32,10 @@
 	const filtered = $derived(
 		(data.watchlist as WatchlistEntry[]).filter((e) => {
 			if (selectedPeopleIds.length > 0) {
-				if (!selectedPeopleIds.every((id) => e.viewerIds.includes(id))) return false;
+				const exactMatch =
+					selectedPeopleIds.length === e.viewerIds.length &&
+					selectedPeopleIds.every((id) => e.viewerIds.includes(id));
+				if (!exactMatch) return false;
 			}
 			if (selectedType && e.movie.type !== selectedType) return false;
 			if (selectedStatus !== 'all' && e.status !== selectedStatus) return false;

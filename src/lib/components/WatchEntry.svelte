@@ -36,29 +36,23 @@
 </script>
 
 <div class="bg-white border rounded-xl shadow overflow-hidden">
-	<!-- Main row: poster + content -->
-	<div class="flex gap-0">
-		<!-- Poster -->
-		<div class="shrink-0 w-24">
+	<!-- Øverste seksjon: poster + info -->
+	<div class="flex gap-3 p-4 items-start">
+		<!-- Poster kvadrat -->
+		<div class="shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
 			{#if entry.movie.poster_url}
 				<img
 					src={entry.movie.poster_url}
 					alt={entry.movie.title}
-					class="w-24 h-full object-cover"
-					style="min-height: 144px;"
+					class="w-full h-full object-cover"
 				/>
 			{:else}
-				<div
-					class="w-24 bg-gray-100 flex items-center justify-center text-gray-300 text-3xl"
-					style="min-height: 144px;"
-				>
-					?
-				</div>
+				<span class="text-gray-300 text-3xl">?</span>
 			{/if}
 		</div>
 
-		<!-- Content -->
-		<div class="flex-1 min-w-0 p-4 space-y-3">
+		<!-- Info -->
+		<div class="flex-1 min-w-0">
 			<!-- Tittel + slett -->
 			<div class="flex items-start justify-between gap-2">
 				<div class="min-w-0">
@@ -93,7 +87,7 @@
 			</div>
 
 			<!-- Status -->
-			<div class="flex gap-1.5 flex-wrap">
+			<div class="flex gap-1.5 flex-wrap mt-2">
 				{#each ['watching', 'paused', 'completed', 'archived'] as s}
 					<form method="POST" action="?/setStatus" use:enhance>
 						<input type="hidden" name="id" value={entry.id} />
@@ -111,7 +105,7 @@
 			</div>
 
 			<!-- Hvem ser -->
-			<div>
+			<div class="mt-2">
 				<p class="text-xs text-gray-400 mb-1.5">Hvem ser</p>
 				<div class="flex flex-wrap gap-1.5">
 					{#each people as person}
@@ -132,9 +126,11 @@
 					{/each}
 				</div>
 			</div>
+		</div>
+	</div>
 
-			<!-- Innstillinger toggle -->
-			<div class="border-t pt-2">
+	<!-- Innstillinger toggle -->
+	<div class="border-t px-4 py-2">
 				<button
 					onclick={() => (showSettings = !showSettings)}
 					class="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition"
@@ -227,8 +223,8 @@
 				{/if}
 			</div>
 
-			<!-- Seanselogg -->
-			<div class="border-t pt-2">
+	<!-- Seanselogg -->
+	<div class="border-t px-4 py-2">
 				<div class="flex items-center gap-3">
 					{#if entry.watchLogs.length > 0}
 						<button
@@ -343,7 +339,5 @@
 						{/each}
 					</div>
 				{/if}
-			</div>
-		</div>
 	</div>
 </div>
