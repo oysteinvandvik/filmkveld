@@ -37,9 +37,9 @@
 
 <div class="bg-white border rounded-xl shadow overflow-hidden">
 	<!-- Øverste seksjon: poster + info -->
-	<div class="flex gap-3 p-4 items-start">
-		<!-- Poster kvadrat -->
-		<div class="shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+	<div class="flex items-stretch">
+		<!-- Poster fyller full høyde -->
+		<div class="shrink-0 w-24 bg-gray-100 flex items-center justify-center">
 			{#if entry.movie.poster_url}
 				<img
 					src={entry.movie.poster_url}
@@ -52,7 +52,7 @@
 		</div>
 
 		<!-- Info -->
-		<div class="flex-1 min-w-0">
+		<div class="flex-1 min-w-0 p-4">
 			<!-- Tittel + slett -->
 			<div class="flex items-start justify-between gap-2">
 				<div class="min-w-0">
