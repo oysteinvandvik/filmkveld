@@ -158,8 +158,9 @@
 			method="POST"
 			action="?/createSession"
 			use:enhance={() => {
-				return ({ result, update }) => {
-					if (result.type !== 'redirect') update();
+				return async ({ result, update }) => {
+					await update();
+					if (result.type === 'success') showCreate = false;
 				};
 			}}
 			class="space-y-3"

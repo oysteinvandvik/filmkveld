@@ -1,5 +1,5 @@
 import { requireAuth } from '$lib/server/auth';
-import { redirect, fail } from '@sveltejs/kit';
+import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession } }) => {
@@ -32,7 +32,7 @@ export const actions: Actions = {
 			.single();
 
 		if (error) return fail(500, { error: error.message });
-		redirect(303, `/admin/sessions/${data.id}`);
+		return { created: data.id };
 	},
 
 	openVoting: async ({ request, locals: { supabase, safeGetSession } }) => {
