@@ -29,6 +29,7 @@
 		<a href="/" class="text-lg font-bold tracking-tight">🎬 Filmkveld</a>
 		<nav class="flex items-center gap-4 text-sm">
 			<a href="/watching" class="hover:underline">Vi ser på</a>
+			<a href="/anbefalinger" class="hover:underline hidden sm:inline">✨ Anbefalinger</a>
 			<a href="/admin/people" class="hover:underline hidden sm:inline">Deltakere</a>
 			<button onclick={signOut} class="hover:underline opacity-75">Logg ut</button>
 		</nav>
