@@ -19,6 +19,17 @@ export async function searchTmdb(query: string) {
 		.map(normalizeTmdbResult);
 }
 
+export async function fetchRecommendations(tmdbId: number, type: 'movie' | 'tv'): Promise<TmdbMovie[]> {
+	const res = await fetch(
+		`${BASE}/${type}/${tmdbId}/recommendations?api_key=${PUBLIC_TMDB_API_KEY}&language=nb-NO`
+	);
+	if (!res.ok) return [];
+	const data = await res.json();
+	return (data.results as Omit<TmdbRawResult, 'media_type'>[])
+		.slice(0, 10)
+		.map((r) => normalizeTmdbResult({ ...r, media_type: type }));
+}
+
 export async function fetchTmdbDetails(tmdbId: number, type: 'movie' | 'tv'): Promise<TmdbMovie> {
 	const res = await fetch(`${BASE}/${type}/${tmdbId}?api_key=${PUBLIC_TMDB_API_KEY}&language=nb-NO`);
 	if (!res.ok) throw new Error('TMDB fetch failed');

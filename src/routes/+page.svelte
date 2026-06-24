@@ -121,9 +121,10 @@
 		<p class="text-center text-gray-400 italic pt-12">Ingen aktive filmkvelder ennå.<br/>Trykk + for å opprette en.</p>
 	{/if}
 
-	<!-- Arkiv-lenke -->
-	<div class="text-center pt-2">
+	<!-- Lenker -->
+	<div class="flex justify-center gap-6 pt-2">
 		<a href="/arkiv" class="text-sm text-gray-400 hover:text-gray-600">📦 Arkiv</a>
+		<a href="/anbefalinger" class="text-sm text-gray-400 hover:text-gray-600">✨ Anbefalinger</a>
 	</div>
 </div>
 
