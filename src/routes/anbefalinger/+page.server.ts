@@ -11,8 +11,8 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 		supabase.from('watchlist').select('movie_id, movie:movies(id, type)'),
 		supabase
 			.from('voting_sessions')
-			.select('id, title')
-			.eq('status', 'suggestion')
+			.select('id, title, status')
+			.in('status', ['suggestion', 'voting'])
 			.order('created_at', { ascending: false }),
 		supabase.from('session_candidates').select('movie:movies(id, type)')
 	]);
@@ -80,7 +80,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 	return {
 		movieRecs: aggregate(movieRecLists, excludeIds),
 		tvRecs: aggregate(tvRecLists, excludeIds),
-		suggestionSessions: (suggestionSessionsRes.data ?? []) as { id: string; title: string }[]
+		suggestionSessions: (suggestionSessionsRes.data ?? []) as { id: string; title: string; status: string }[]
 	};
 };
 
