@@ -3,6 +3,7 @@
 
 	let { data } = $props();
 
+	let tab = $state<'movie' | 'tv'>('movie');
 	let addingIds = $state<Set<string>>(new Set());
 	let addedIds = $state<Set<number>>(new Set());
 
@@ -11,18 +12,36 @@
 	}
 </script>
 
-<div class="max-w-3xl mx-auto p-6 space-y-10 pb-24">
+<div class="max-w-3xl mx-auto p-6 space-y-6 pb-24">
 	<div class="flex items-center gap-3">
 		<a href="/" class="text-gray-400 hover:text-gray-600 text-lg leading-none">←</a>
 		<h1 class="text-2xl font-bold text-gray-800">Anbefalinger</h1>
 	</div>
 
+	<!-- Tabs -->
+	<div class="flex gap-2">
+		<button
+			onclick={() => (tab = 'movie')}
+			class="px-4 py-2 rounded-xl text-sm font-medium transition {tab === 'movie'
+				? 'bg-purple-600 text-white'
+				: 'bg-gray-100 text-gray-600 hover:bg-gray-200'}"
+		>
+			🎬 Filmer
+		</button>
+		<button
+			onclick={() => (tab = 'tv')}
+			class="px-4 py-2 rounded-xl text-sm font-medium transition {tab === 'tv'
+				? 'bg-purple-600 text-white'
+				: 'bg-gray-100 text-gray-600 hover:bg-gray-200'}"
+		>
+			📺 Serier
+		</button>
+	</div>
+
 	<!-- Filmanbefalinger -->
+	{#if tab === 'movie'}
 	<section class="space-y-4">
-		<div>
-			<h2 class="text-lg font-semibold text-gray-800">🎬 Filmer</h2>
-			<p class="text-sm text-gray-500">Basert på filmkvelder dere har hatt</p>
-		</div>
+		<p class="text-sm text-gray-500">Basert på filmer dere har stemt på</p>
 
 		{#if data.movieRecs.length === 0}
 			<p class="text-sm text-gray-400 italic">
@@ -87,13 +106,12 @@
 			</div>
 		{/if}
 	</section>
+	{/if}
 
 	<!-- Serieanbefalinger -->
+	{#if tab === 'tv'}
 	<section class="space-y-4">
-		<div>
-			<h2 class="text-lg font-semibold text-gray-800">📺 Serier</h2>
-			<p class="text-sm text-gray-500">Basert på serier dere ser eller har sett</p>
-		</div>
+		<p class="text-sm text-gray-500">Basert på serier dere ser eller har sett</p>
 
 		{#if data.tvRecs.length === 0}
 			<p class="text-sm text-gray-400 italic">
@@ -148,4 +166,5 @@
 			</div>
 		{/if}
 	</section>
+	{/if}
 </div>
