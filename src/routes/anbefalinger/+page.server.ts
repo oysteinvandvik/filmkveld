@@ -7,28 +7,17 @@ import type { Actions, PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession } }) => {
 	await requireAuth(safeGetSession);
 
-	const [decidedRes, watchlistRes, suggestionSessionsRes, allCandidatesRes] = await Promise.all([
-		supabase.from('voting_sessions').select('id').eq('status', 'decided'),
+	const [watchlistRes, suggestionSessionsRes, allCandidatesRes] = await Promise.all([
 		supabase.from('watchlist').select('movie_id, movie:movies(id, type)'),
 		supabase
 			.from('voting_sessions')
 			.select('id, title')
 			.eq('status', 'suggestion')
 			.order('created_at', { ascending: false }),
-		supabase.from('session_candidates').select('movie:movies(id)')
+		supabase.from('session_candidates').select('movie:movies(id, type)')
 	]);
 
-	const decidedIds = (decidedRes.data ?? []).map((s) => s.id);
-
-	// Movie sources: candidates from decided sessions, movies only
-	const movieCandidatesRes = decidedIds.length
-		? await supabase
-				.from('session_candidates')
-				.select('movie:movies(id, type)')
-				.in('session_id', decidedIds)
-		: { data: [] };
-
-	// TV sources: watchlist entries of type tv
+	// TV sources: watchlist (tv type) + candidates (tv type)
 	const tvSources: { id: number; type: 'tv' }[] = [];
 	const seenTvSources = new Set<number>();
 	for (const entry of watchlistRes.data ?? []) {
@@ -38,11 +27,18 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 			tvSources.push({ id: movie.id, type: 'tv' });
 		}
 	}
+	for (const c of allCandidatesRes.data ?? []) {
+		const movie = (c as any).movie as { id: number; type: string } | null;
+		if (movie?.type === 'tv' && !seenTvSources.has(movie.id)) {
+			seenTvSources.add(movie.id);
+			tvSources.push({ id: movie.id, type: 'tv' });
+		}
+	}
 
-	// Movie sources from decided sessions
+	// Movie sources: all candidates of movie type
 	const movieSources: { id: number; type: 'movie' }[] = [];
 	const seenMovieSources = new Set<number>();
-	for (const c of movieCandidatesRes.data ?? []) {
+	for (const c of allCandidatesRes.data ?? []) {
 		const movie = (c as any).movie as { id: number; type: string } | null;
 		if (movie?.type === 'movie' && !seenMovieSources.has(movie.id)) {
 			seenMovieSources.add(movie.id);
