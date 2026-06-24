@@ -1,62 +1,131 @@
 import { requireAuth } from '$lib/server/auth';
-import { fetchRecommendations } from '$lib/tmdb';
+import { fetchRecommendations, fetchTmdbDetails } from '$lib/tmdb';
 import { add } from '$lib/server/watchingActions';
+import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession } }) => {
 	await requireAuth(safeGetSession);
 
-	const { data: sessions } = await supabase
-		.from('voting_sessions')
-		.select('id')
-		.eq('status', 'decided');
-
-	const sessionIds = (sessions ?? []).map((s) => s.id);
-
-	const [candidateRes, watchlistRes, allCandidateRes] = await Promise.all([
-		sessionIds.length
-			? supabase
-					.from('session_candidates')
-					.select('movie:movies(id, type)')
-					.in('session_id', sessionIds)
-			: Promise.resolve({ data: [] as { movie: { id: number; type: string } | null }[] }),
-		supabase.from('watchlist').select('movie_id'),
+	const [decidedRes, watchlistRes, suggestionSessionsRes, allCandidatesRes] = await Promise.all([
+		supabase.from('voting_sessions').select('id').eq('status', 'decided'),
+		supabase.from('watchlist').select('movie_id, movie:movies(id, type)'),
+		supabase
+			.from('voting_sessions')
+			.select('id, title')
+			.eq('status', 'suggestion')
+			.order('created_at', { ascending: false }),
 		supabase.from('session_candidates').select('movie:movies(id)')
 	]);
 
-	const seenSources = new Set<number>();
-	const sources: { id: number; type: 'movie' | 'tv' }[] = [];
-	for (const c of candidateRes.data ?? []) {
-		const movie = c.movie as { id: number; type: 'movie' | 'tv' } | null;
-		if (movie?.id && !seenSources.has(movie.id)) {
-			seenSources.add(movie.id);
-			sources.push({ id: movie.id, type: movie.type });
+	const decidedIds = (decidedRes.data ?? []).map((s) => s.id);
+
+	// Movie sources: candidates from decided sessions, movies only
+	const movieCandidatesRes = decidedIds.length
+		? await supabase
+				.from('session_candidates')
+				.select('movie:movies(id, type)')
+				.in('session_id', decidedIds)
+		: { data: [] };
+
+	// TV sources: watchlist entries of type tv
+	const tvSources: { id: number; type: 'tv' }[] = [];
+	const seenTvSources = new Set<number>();
+	for (const entry of watchlistRes.data ?? []) {
+		const movie = (entry as any).movie as { id: number; type: string } | null;
+		if (movie?.type === 'tv' && !seenTvSources.has(movie.id)) {
+			seenTvSources.add(movie.id);
+			tvSources.push({ id: movie.id, type: 'tv' });
 		}
 	}
 
-	const excludeIds = new Set<number>([
-		...(watchlistRes.data ?? []).map((w) => w.movie_id as number),
-		...(allCandidateRes.data ?? [])
+	// Movie sources from decided sessions
+	const movieSources: { id: number; type: 'movie' }[] = [];
+	const seenMovieSources = new Set<number>();
+	for (const c of movieCandidatesRes.data ?? []) {
+		const movie = (c as any).movie as { id: number; type: string } | null;
+		if (movie?.type === 'movie' && !seenMovieSources.has(movie.id)) {
+			seenMovieSources.add(movie.id);
+			movieSources.push({ id: movie.id, type: 'movie' });
+		}
+	}
+
+	// IDs to exclude from recs (already on watchlist or candidate)
+	const watchlistIds = new Set<number>(
+		(watchlistRes.data ?? []).map((w) => w.movie_id as number).filter(Boolean)
+	);
+	const candidateIds = new Set<number>(
+		(allCandidatesRes.data ?? [])
 			.map((c) => (c as any).movie?.id)
 			.filter((id): id is number => typeof id === 'number')
+	);
+	const excludeIds = new Set<number>([...watchlistIds, ...candidateIds]);
+
+	// Fetch recs in parallel
+	const [movieRecLists, tvRecLists] = await Promise.all([
+		Promise.all(movieSources.slice(0, 8).map((s) => fetchRecommendations(s.id, s.type))),
+		Promise.all(tvSources.slice(0, 8).map((s) => fetchRecommendations(s.id, s.type)))
 	]);
 
-	const results = await Promise.all(
-		sources.slice(0, 8).map((s) => fetchRecommendations(s.id, s.type))
-	);
-
-	const seen = new Set<number>(excludeIds);
-	const recommendations = [];
-	for (const list of results) {
-		for (const movie of list) {
-			if (!seen.has(movie.tmdbId)) {
-				seen.add(movie.tmdbId);
-				recommendations.push(movie);
+	function aggregate(lists: Awaited<ReturnType<typeof fetchRecommendations>>[], exclude: Set<number>) {
+		const seen = new Set<number>(exclude);
+		const out = [];
+		for (const list of lists) {
+			for (const m of list) {
+				if (!seen.has(m.tmdbId)) {
+					seen.add(m.tmdbId);
+					out.push(m);
+				}
 			}
 		}
+		return out.slice(0, 24);
 	}
 
-	return { recommendations: recommendations.slice(0, 24) };
+	return {
+		movieRecs: aggregate(movieRecLists, excludeIds),
+		tvRecs: aggregate(tvRecLists, excludeIds),
+		suggestionSessions: (suggestionSessionsRes.data ?? []) as { id: string; title: string }[]
+	};
 };
 
-export const actions: Actions = { add };
+export const actions: Actions = {
+	addToWatchlist: add,
+
+	addToSession: async ({ request, locals: { supabase, safeGetSession } }) => {
+		await requireAuth(safeGetSession);
+
+		const form = await request.formData();
+		const tmdb_id = Number(form.get('tmdb_id'));
+		const type = form.get('type') as 'movie' | 'tv';
+		const session_id = form.get('session_id') as string;
+
+		if (!session_id) return fail(400, { error: 'Velg en filmkveld' });
+
+		let details;
+		try {
+			details = await fetchTmdbDetails(tmdb_id, type);
+		} catch {
+			details = null;
+		}
+
+		await supabase.from('movies').upsert({
+			id: tmdb_id,
+			title: details?.title ?? '',
+			type,
+			year: details?.year ?? null,
+			poster_url: details?.posterUrl ?? null,
+			overview: details?.overview ?? null,
+			genre: details?.genre ?? null,
+			runtime: details?.runtime ?? null,
+			tmdb_rating: details?.tmdbRating ?? null,
+			seasons: details?.seasons ?? null,
+			original_language: details?.originalLanguage ?? null
+		});
+
+		const { error } = await supabase
+			.from('session_candidates')
+			.insert({ session_id, movie_id: tmdb_id });
+
+		if (error && error.code !== '23505') return fail(500, { error: error.message });
+	}
+};
