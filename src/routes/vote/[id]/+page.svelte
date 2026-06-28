@@ -284,13 +284,13 @@
 									<img
 										src={c.movie.poster_url}
 										alt={c.movie.title}
-										class="w-full object-cover transition-all duration-400"
-										style="height: {offset === 0 ? '180px' : '160px'};"
+										class="w-full object-cover object-top transition-all duration-400"
+										style="height: {offset === 0 ? '260px' : '220px'};"
 									/>
 								{:else}
 									<div
 										class="w-full bg-gradient-to-br from-purple-100 to-purple-50 flex items-center justify-center text-5xl transition-all duration-400"
-										style="height: {offset === 0 ? '180px' : '160px'};"
+										style="height: {offset === 0 ? '260px' : '220px'};"
 									>
 										🎬
 									</div>
