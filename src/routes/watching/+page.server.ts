@@ -1,11 +1,17 @@
 import { requireAuth } from '$lib/server/auth';
-import { redirect } from '@sveltejs/kit';
 import type { Movie, Person, WatchLogEntry, WatchlistEntry } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
 import * as watchingActions from '$lib/server/watchingActions';
+import * as sessionActions from '$lib/server/sessionActions';
 
 export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession } }) => {
 	await requireAuth(safeGetSession);
+
+	const { data: sessions } = await supabase
+		.from('voting_sessions')
+		.select('*')
+		.neq('status', 'archived')
+		.order('created_at', { ascending: false });
 
 	const { data: entries } = await supabase
 		.from('watchlist')
@@ -83,9 +89,10 @@ export const load: PageServerLoad = async ({ locals: { supabase, safeGetSession 
 		}));
 
 	return {
+		sessions: sessions ?? [],
 		watchlist,
 		people: (people ?? []) as Person[]
 	};
 };
 
-export const actions: Actions = watchingActions;
+export const actions: Actions = { ...watchingActions, ...sessionActions };

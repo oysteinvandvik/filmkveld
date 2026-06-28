@@ -26,9 +26,8 @@
 
 {#if data.session}
 	<header class="bg-purple-700 text-white px-4 py-3 flex items-center justify-between shadow">
-		<a href="/" class="text-lg font-bold tracking-tight">🎬 Filmkveld</a>
+		<a href="/watching" class="text-lg font-bold tracking-tight">🎬 Filmkveld</a>
 		<nav class="flex items-center gap-4 text-sm">
-			<a href="/watching" class="hover:underline">Vi ser</a>
 			<a href="/anbefalinger" class="hover:underline">✨</a>
 			<a href="/admin/people" class="hover:underline hidden sm:inline">Deltakere</a>
 			<button onclick={signOut} class="hover:underline opacity-75">Logg ut</button>
