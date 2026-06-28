@@ -212,6 +212,15 @@
 				<p class="text-sm text-gray-600 leading-relaxed">{selected.overview}</p>
 			{/if}
 
+			<a
+				href="https://www.themoviedb.org/{selected.type === 'tv' ? 'tv' : 'movie'}/{selected.tmdbId}"
+				target="_blank"
+				rel="noopener noreferrer"
+				class="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 underline underline-offset-2"
+			>
+				Se mer på TMDB →
+			</a>
+
 			<!-- Handlinger -->
 			{#if addedIds.has(selected.tmdbId)}
 				<p class="text-center text-green-600 font-medium py-1">✓ Lagt til</p>
