@@ -288,33 +288,65 @@
 				{/if}
 
 				{#if form?.searchResults}
-					<div class="space-y-2">
+					<div class="space-y-3">
 						{#each form.searchResults as movie}
-							<div class="flex items-center gap-3 border rounded-xl p-3 bg-gray-50">
-								{#if movie.posterUrl}
-									<img src={movie.posterUrl} alt={movie.title} class="w-12 h-auto rounded shadow" />
-								{:else}
-									<div class="w-12 h-16 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-sm">?</div>
-								{/if}
-								<div class="flex-1 min-w-0">
-									<p class="font-medium text-sm truncate">{movie.title}</p>
-									<p class="text-xs text-gray-500">{movie.year} · {movie.type === 'tv' ? 'Serie' : 'Film'}</p>
+							<div class="border rounded-xl bg-gray-50 overflow-hidden">
+								<div class="flex gap-3 p-3">
+									<!-- Poster -->
+									{#if movie.posterUrl}
+										<img src={movie.posterUrl} alt={movie.title} class="w-16 h-24 object-cover object-top rounded-lg shadow shrink-0" />
+									{:else}
+										<div class="w-16 h-24 bg-gray-200 rounded-lg flex items-center justify-center text-gray-400 shrink-0">?</div>
+									{/if}
+
+									<!-- Info -->
+									<div class="flex-1 min-w-0 flex flex-col gap-1">
+										<p class="font-semibold text-sm leading-snug">{movie.title}</p>
+										<div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
+											{#if movie.year}<span>{movie.year}</span>{/if}
+											<span>·</span>
+											<span>{movie.type === 'tv' ? 'Serie' : 'Film'}</span>
+											{#if movie.type === 'movie' && movie.runtime}
+												<span>· {movie.runtime} min</span>
+											{:else if movie.type === 'tv' && movie.seasons}
+												<span>· {movie.seasons} sesong{movie.seasons !== 1 ? 'er' : ''}</span>
+											{/if}
+											{#if movie.tmdbRating}
+												<span class="text-yellow-500 font-medium">★ {movie.tmdbRating}</span>
+											{/if}
+										</div>
+										{#if movie.genre}
+											<div class="flex flex-wrap gap-1 mt-0.5">
+												{#each movie.genre.split(', ').slice(0, 3) as g}
+													<span class="text-xs bg-purple-50 text-purple-500 px-1.5 py-0.5 rounded-full">{g}</span>
+												{/each}
+											</div>
+										{/if}
+										{#if movie.overview}
+											<p class="text-xs text-gray-500 line-clamp-2 mt-0.5 leading-relaxed">{movie.overview}</p>
+										{/if}
+									</div>
 								</div>
-								<form method="POST" action="?/add" use:enhance={() => {
-									const id = movie.tmdbId;
-									addingIds = new Set([...addingIds, id]);
-									return ({ update }) => { update(); const next = new Set(addingIds); next.delete(id); addingIds = next; };
-								}}>
-									<input type="hidden" name="tmdb_id" value={movie.tmdbId} />
-									<input type="hidden" name="title" value={movie.title} />
-									<input type="hidden" name="type" value={movie.type} />
-									<input type="hidden" name="year" value={movie.year} />
-									<input type="hidden" name="poster_url" value={movie.posterUrl ?? ''} />
-									<input type="hidden" name="overview" value={movie.overview} />
-									<button type="submit" disabled={addingIds.has(movie.tmdbId)} class="text-xs bg-purple-600 text-white px-3 py-1.5 rounded-full hover:bg-purple-700 disabled:opacity-50 min-w-[64px]">
-										{addingIds.has(movie.tmdbId) ? '…' : 'Legg til'}
-									</button>
-								</form>
+
+								<!-- Legg til-knapp -->
+								<div class="px-3 pb-3">
+									<form method="POST" action="?/add" use:enhance={() => {
+										const id = movie.tmdbId;
+										addingIds = new Set([...addingIds, id]);
+										return ({ update }) => { update(); const next = new Set(addingIds); next.delete(id); addingIds = next; };
+									}}>
+										<input type="hidden" name="tmdb_id" value={movie.tmdbId} />
+										<input type="hidden" name="title" value={movie.title} />
+										<input type="hidden" name="type" value={movie.type} />
+										<input type="hidden" name="year" value={movie.year} />
+										<input type="hidden" name="poster_url" value={movie.posterUrl ?? ''} />
+										<input type="hidden" name="overview" value={movie.overview} />
+										<button type="submit" disabled={addingIds.has(movie.tmdbId)}
+											class="w-full text-xs bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50 font-medium">
+											{addingIds.has(movie.tmdbId) ? '…' : '+ Legg til seerlisten'}
+										</button>
+									</form>
+								</div>
 							</div>
 						{/each}
 					</div>
