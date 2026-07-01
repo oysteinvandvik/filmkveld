@@ -3,11 +3,15 @@
 	import { goto } from '$app/navigation';
 	import WatchEntry from '$lib/components/WatchEntry.svelte';
 	import type { WatchlistEntry } from '$lib/types';
+	import type { TmdbMovie } from '$lib/tmdb';
 
 	let { data, form } = $props();
 
 	// --- Tab ---
 	let tab = $state<'sessions' | 'watchlist'>('sessions');
+
+	// --- Søk detalj-sheet ---
+	let selectedSearch = $state<TmdbMovie | null>(null);
 
 	// --- Filmkvelder tab ---
 	let showCreate = $state(false);
@@ -291,7 +295,11 @@
 					<div class="space-y-3">
 						{#each form.searchResults as movie}
 							<div class="border rounded-xl bg-gray-50 overflow-hidden">
-								<div class="flex gap-3 p-3">
+								<button
+									onclick={() => (selectedSearch = movie)}
+									class="flex gap-3 p-3 w-full text-left hover:bg-gray-100 transition focus:outline-none"
+									aria-label="Vis detaljer for {movie.title}"
+								>
 									<!-- Poster -->
 									{#if movie.posterUrl}
 										<img src={movie.posterUrl} alt={movie.title} class="w-16 h-24 object-cover object-top rounded-lg shadow shrink-0" />
@@ -326,7 +334,7 @@
 											<p class="text-xs text-gray-500 line-clamp-2 mt-0.5 leading-relaxed">{movie.overview}</p>
 										{/if}
 									</div>
-								</div>
+								</button>
 
 								<!-- Legg til-knapp -->
 								<div class="px-3 pb-3">
@@ -443,5 +451,80 @@
 				Opprett og legg til filmer →
 			</button>
 		</form>
+	</div>
+{/if}
+
+<!-- Søk detalj-sheet -->
+{#if selectedSearch}
+	<div
+		class="fixed inset-0 bg-black/50 z-40"
+		role="button"
+		tabindex="-1"
+		aria-label="Lukk"
+		onclick={() => (selectedSearch = null)}
+		onkeydown={(e) => e.key === 'Escape' && (selectedSearch = null)}
+	></div>
+	<div class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-2xl max-w-lg mx-auto overflow-hidden max-h-[90dvh] flex flex-col">
+		<div class="relative shrink-0">
+			{#if selectedSearch.posterUrl}
+				<img src={selectedSearch.posterUrl} alt={selectedSearch.title} class="w-full max-h-64 object-cover object-top" />
+			{:else}
+				<div class="w-full h-48 bg-gray-100 flex items-center justify-center text-6xl">🎬</div>
+			{/if}
+			<button
+				onclick={() => (selectedSearch = null)}
+				class="absolute top-3 right-3 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center text-lg leading-none hover:bg-black/70 transition"
+			>×</button>
+		</div>
+		<div class="p-5 space-y-4 overflow-y-auto">
+			<div>
+				<h2 class="text-xl font-bold text-gray-900 leading-snug">{selectedSearch.title}</h2>
+				<div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-gray-500 mt-1">
+					{#if selectedSearch.year}<span>{selectedSearch.year}</span>{/if}
+					<span>·</span>
+					<span>{selectedSearch.type === 'tv' ? 'Serie' : 'Film'}</span>
+					{#if selectedSearch.type === 'movie' && selectedSearch.runtime}
+						<span>· {selectedSearch.runtime} min</span>
+					{:else if selectedSearch.type === 'tv' && selectedSearch.seasons}
+						<span>· {selectedSearch.seasons} sesong{selectedSearch.seasons !== 1 ? 'er' : ''}</span>
+					{/if}
+				</div>
+				{#if selectedSearch.tmdbRating}
+					<p class="text-sm text-yellow-500 font-semibold mt-1">★ {selectedSearch.tmdbRating} / 10</p>
+				{/if}
+				{#if selectedSearch.genre}
+					<div class="flex flex-wrap gap-1.5 mt-2">
+						{#each selectedSearch.genre.split(', ') as g}
+							<span class="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full">{g}</span>
+						{/each}
+					</div>
+				{/if}
+			</div>
+			{#if selectedSearch.overview}
+				<p class="text-sm text-gray-600 leading-relaxed">{selectedSearch.overview}</p>
+			{/if}
+			<form method="POST" action="?/add" use:enhance={() => {
+				const id = selectedSearch!.tmdbId;
+				addingIds = new Set([...addingIds, id]);
+				return ({ update }) => {
+					update();
+					const next = new Set(addingIds);
+					next.delete(id);
+					addingIds = next;
+					selectedSearch = null;
+				};
+			}}>
+				<input type="hidden" name="tmdb_id" value={selectedSearch.tmdbId} />
+				<input type="hidden" name="title" value={selectedSearch.title} />
+				<input type="hidden" name="type" value={selectedSearch.type} />
+				<input type="hidden" name="year" value={selectedSearch.year} />
+				<input type="hidden" name="poster_url" value={selectedSearch.posterUrl ?? ''} />
+				<input type="hidden" name="overview" value={selectedSearch.overview} />
+				<button type="submit" disabled={addingIds.has(selectedSearch.tmdbId)}
+					class="w-full bg-purple-600 text-white font-semibold py-3 rounded-xl hover:bg-purple-700 disabled:opacity-50 transition">
+					{addingIds.has(selectedSearch.tmdbId) ? '…' : '+ Legg til seerlisten'}
+				</button>
+			</form>
+		</div>
 	</div>
 {/if}
